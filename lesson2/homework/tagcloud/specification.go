@@ -27,6 +27,7 @@ func (tc *TagCloud) AddTag(tag string) {
 	}
 	tc.tagStats[index].OccurrenceCount++
 	for index > 0 && tc.tagStats[index].OccurrenceCount > tc.tagStats[index-1].OccurrenceCount {
+		tc.tagMap[tc.tagStats[index-1].Tag] = index
 		tc.tagStats[index], tc.tagStats[index-1] = tc.tagStats[index-1], tc.tagStats[index]
 		index--
 	}
