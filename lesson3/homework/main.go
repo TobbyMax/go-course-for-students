@@ -70,61 +70,6 @@ type DD struct {
 func Convert(buf []byte, option func([]byte) []byte) []byte {
 	return option(buf)
 }
-func DoAll(options *Options) {
-	infile := os.Stdin
-	var err error = nil
-	if options.From != "stdin" {
-		infile, err = os.Open(options.From)
-		if err != nil {
-			panic(err)
-		}
-	}
-	defer func() {
-		if err := infile.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	outfile := os.Stdout
-	if options.To != "stdout" {
-		infile, err = os.Create(options.To)
-		if err != nil {
-			panic(err)
-		}
-	}
-	//defer func() {
-	//	if err := outfile.Close(); err != nil {
-	//		panic(err)
-	//	}
-	//}()
-	offset, err := infile.Seek(options.Offset, 0)
-	if err != nil {
-		panic(err)
-	}
-
-	buf := make([]byte, options.BlockSize)
-	for offset < options.Limit {
-		n, err := infile.Read(buf)
-		if err != nil && err != io.EOF {
-			panic(err)
-		}
-		if n == 0 {
-			break
-		}
-		offset += int64(n)
-		if offset > options.Limit {
-			n -= int(offset - options.Limit)
-		}
-		//if !utf8.Valid(buf) {
-		//	n -= 1
-		//	notValid := 0
-		//}
-		//bufConverted := Convert(buf[:n], options.Conv[0])
-		if _, err := outfile.Write(buf[:n]); err != nil {
-			panic(err)
-		}
-	}
-}
 
 func (ss *StringSlice) ToSet() map[string]struct{} {
 	var void struct{}
@@ -143,12 +88,10 @@ func DoAll2(options *Options) {
 	if len(options.Conv) > 2 {
 		panic("Too many arguments.")
 	}
-
-	conv := options.Conv.ToSet()
 	trim := false
 	upper := false
 	lower := false
-	for key, _ := range conv {
+	for _, key := range options.Conv {
 		switch key {
 		case "trim_spaces":
 			trim = true
@@ -203,18 +146,17 @@ func DoAll2(options *Options) {
 		offset    int64 = 0
 		start           = true
 		bufSpaces []byte
-		lenSpaces int64 = 0
-		carryOver       = make([]byte, 4)
+		//lenSpaces int64 = 0
+		carryOver = make([]byte, 4)
 		carryLen  int
 	)
-	buf := make([]byte, options.BlockSize)
+	buf := make([]byte, options.BlockSize+4)
 	for options.Limit == -1 || offset < options.Offset+options.Limit {
 		var (
-			n   int
-			err error
+			bufSize int
+			err     error
 		)
-
-		n, err = infile.Read(buf[carryLen:])
+		bufSize, err = infile.Read(buf[carryLen : options.BlockSize+uint64(carryLen)])
 		if carryLen > 0 {
 			copy(buf, carryOver[:carryLen])
 		}
@@ -222,76 +164,82 @@ func DoAll2(options *Options) {
 		if err != nil && err != io.EOF {
 			panic(err)
 		}
-		if n == 0 || err == io.EOF {
+
+		if bufSize == 0 || err == io.EOF {
 			if offset < options.Offset {
 				panic("Offset out of range")
 			}
 			break
 		}
 
-		n += carryLen
-		offset += int64(n)
-		//print("Offset: ")
-		//print(offset)
-		//print("\n")
+		bufSize += carryLen
+		offset += int64(bufSize)
 		carryLen = 0
 		if offset < options.Offset {
 			continue
 		}
 		bufOffset := buf
-		if delta := int(offset - options.Offset); delta < n && offset >= options.Offset {
-			bufOffset = buf[n-delta : n]
-			n = delta
+		if delta := int(offset - options.Offset); delta < bufSize && offset >= options.Offset {
+			bufOffset = buf[bufSize-delta : bufSize]
+			bufSize = delta
 		}
 		if options.Limit != -1 && offset > options.Offset+options.Limit {
-			n -= int(offset - (options.Offset + options.Limit))
+			bufSize -= int(offset - (options.Offset + options.Limit))
 		}
-		bufLimited := bufOffset[:n]
-		i := n - 1
-		for ; i > 0; i-- {
+		bufLimited := bufOffset[:bufSize]
+		i := bufSize - 1
+		for ; i >= 0; i-- {
 			if utf8.RuneStart(bufLimited[i]) {
 				if !utf8.Valid(bufLimited[i:]) {
 					carryOver = bufLimited[i:]
 					bufLimited = bufLimited[:i]
-					carryLen = n - i
+					carryLen = bufSize - i
 					offset -= int64(carryLen)
-					n = i
+					bufSize = i
 				}
 				break
 			}
 		}
-		strTrimmed := string(bufLimited[:n])
+
+		strTrimmed := string(bufLimited[:bufSize])
 		if trim && start {
 			strTrimmed = strings.TrimLeftFunc(strTrimmed, unicode.IsSpace)
-			n = len(strTrimmed)
-			if n != 0 {
+			bufSize = len(strTrimmed)
+			if bufSize != 0 {
 				start = false
 			}
 		}
 		if trim && !start {
 			strTrimmed = strings.TrimRightFunc(strTrimmed, unicode.IsSpace)
-			n = len(strTrimmed)
-			if n != 0 {
-				if _, err = outfile.Write(bufSpaces[:lenSpaces]); err != nil {
+			bufSize = len(strTrimmed)
+			if bufSize != 0 {
+				if _, err = outfile.Write(bufSpaces); err != nil {
 					panic(err)
 				}
-				lenSpaces = 0
+				bufSpaces = nil
 			} else {
 				if len(bufSpaces) == 0 {
 					bufSpaces = make([]byte, 0)
 				}
-				bufSpaces = append(bufSpaces, bufLimited[n:]...)
+				bufSpaces = append(bufSpaces, bufLimited[bufSize:]...)
 			}
 		}
-		bufConverted := []byte(strTrimmed[:n])
+		bufConverted := []byte(strTrimmed[:bufSize])
 		switch {
 		case upper:
-			bufConverted = Convert(bufConverted[:n], bytes.ToUpper)
+			bufConverted = Convert(bufConverted[:bufSize], bytes.ToUpper)
 		case lower:
-			bufConverted = Convert(bufConverted[:n], bytes.ToLower)
+			bufConverted = Convert(bufConverted[:bufSize], bytes.ToLower)
 		}
-		if _, err = outfile.Write(bufConverted[:n]); err != nil {
-			panic(err)
+		bsize := uint64(bufSize)
+		for i := uint64(0); i < bsize; i += options.BlockSize {
+			writeLen := bsize
+			if bsize > i+options.BlockSize {
+				writeLen = i + options.BlockSize
+			}
+			if _, err = outfile.Write(bufConverted[i:writeLen]); err != nil {
+				panic(err)
+			}
 		}
 	}
 	if _, err = outfile.Write(carryOver[:carryLen]); err != nil {
