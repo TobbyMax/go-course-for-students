@@ -18,7 +18,7 @@ type Options struct {
 	// todo: add required flags
 	Offset    int64
 	Limit     int64
-	BlockSize uint64
+	BlockSize int
 	Conv      StringSlice
 }
 
@@ -42,7 +42,7 @@ func ParseFlags() (*Options, error) {
 	// todo: parse and validate all flags
 	flag.Int64Var(&opts.Offset, "offset", 0, "file to write. by default - stdout")
 	flag.Int64Var(&opts.Limit, "limit", -1, "file to write. by default - stdout")
-	flag.Uint64Var(&opts.BlockSize, "block-size", 1024, "file to write. by default - stdout")
+	flag.IntVar(&opts.BlockSize, "block-size", 1024, "file to write. by default - stdout")
 	flag.Var(&opts.Conv, "conv", "file to write. by default - stdout")
 
 	flag.Parse()
@@ -62,9 +62,11 @@ type DDReader interface {
 	//Converter
 }
 
-type DD struct {
-	base    int64
-	options Options
+type DDFile struct {
+	file      *os.File
+	blockSize int
+	carryOver []byte
+	carryLen  int
 }
 
 func Convert(buf []byte, option func([]byte) []byte) []byte {
@@ -80,18 +82,17 @@ func (ss *StringSlice) ToSet() map[string]struct{} {
 	return set
 }
 
-func DoAll2(options *Options) {
-	if options.Offset < 0 {
-		panic("Invalid offset")
+func getConvStatus(conversions *StringSlice) (trim, upper, lower bool, err error) {
+	err = nil
+	if len(*conversions) > 2 {
+		err = errors.New("too many arguments")
+		return false, false, false, err
 	}
 
-	if len(options.Conv) > 2 {
-		panic("Too many arguments.")
-	}
-	trim := false
-	upper := false
-	lower := false
-	for _, key := range options.Conv {
+	trim = false
+	upper = false
+	lower = false
+	for _, key := range *conversions {
 		switch key {
 		case "trim_spaces":
 			trim = true
@@ -100,40 +101,105 @@ func DoAll2(options *Options) {
 		case "lower_case":
 			lower = true
 		default:
-			panic("Invalid conversion")
+			err = errors.New("invalid conversion")
+			return false, false, false, err
 		}
 	}
 	if lower == true && upper == true {
-		panic("Can not apply upper_case and lower_case simultaneously")
+		err = errors.New("can not apply 'upper_case' and 'lower_case' simultaneously")
+		return false, false, false, err
 	}
+	return trim, upper, lower, err
+}
 
-	infile := os.Stdin
-	var err error = nil
-	if options.From != "stdin" {
-		infile, err = os.Open(options.From)
+func Open(path string, blockSize int) (*DDFile, error) {
+	var (
+		file       = os.Stdin
+		err  error = nil
+	)
+	if path != "stdin" {
+		file, err = os.Open(path)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
+	return &DDFile{file, blockSize, make([]byte, 4), 0}, err
+}
 
-	defer func() {
-		if !(infile == os.Stdin) {
-			if err := infile.Close(); err != nil {
-				panic(err)
-			}
-		}
-	}()
+func (ddf *DDFile) Close() error {
+	if err := ddf.file.Close(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	outfile := os.Stdout
-	if options.To != "stdout" {
-		_, err = os.Stat(options.To)
+func (ddf *DDFile) Read(b []byte) (int, error) {
+	bufSize, err := ddf.file.Read(b[ddf.carryLen : ddf.blockSize+ddf.carryLen])
+	if err != nil && err != io.EOF {
+		return 0, err
+	}
+	copy(b, ddf.carryOver[:ddf.carryLen])
+	bufSize += ddf.carryLen
+	ddf.carryLen = 0
+	return bufSize, err
+}
+
+func Create(path string, blockSize int) (*DDFile, error) {
+	var (
+		file       = os.Stdin
+		err  error = nil
+	)
+	file = os.Stdout
+	if path != "stdout" {
+		_, err = os.Stat(path)
 		if !errors.Is(err, os.ErrNotExist) {
 			panic("Outfile already exists")
 		}
-		outfile, err = os.Create(options.To)
+		file, err = os.Create(path)
 		if err != nil {
 			panic(err)
 		}
+	}
+	return &DDFile{file, blockSize, make([]byte, 4), 0}, err
+}
+
+func (ddf *DDFile) Write(b []byte) error {
+	var bufLen = len(b)
+	for i := 0; i < bufLen; i += ddf.blockSize {
+		writeLen := bufLen
+		if bufLen > i+ddf.blockSize {
+			writeLen = i + ddf.blockSize
+		}
+		if _, err := ddf.file.Write(b[i:writeLen]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func Execute(options *Options) error {
+	if options.Offset < 0 {
+		panic("Invalid offset")
+	}
+	var err error = nil
+	trim, upper, lower, err := getConvStatus(&options.Conv)
+	if err != nil {
+		return err
+	}
+
+	infile, err := Open(options.From, options.BlockSize)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := infile.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	outfile, err := Create(options.To, options.BlockSize)
+	if err != nil {
+		return err
 	}
 
 	defer func() {
@@ -143,38 +209,29 @@ func DoAll2(options *Options) {
 	}()
 
 	var (
-		offset    int64 = 0
-		start           = true
-		bufSpaces []byte
-		//lenSpaces int64 = 0
-		carryOver = make([]byte, 4)
-		carryLen  int
+		offset    int64  = 0
+		start            = true
+		bufSpaces []byte = nil
+		buf              = make([]byte, options.BlockSize+4)
 	)
-	buf := make([]byte, options.BlockSize+4)
+
 	for options.Limit == -1 || offset < options.Offset+options.Limit {
 		var (
 			bufSize int
 			err     error
 		)
-		bufSize, err = infile.Read(buf[carryLen : options.BlockSize+uint64(carryLen)])
-		if carryLen > 0 {
-			copy(buf, carryOver[:carryLen])
-		}
-
+		bufSize, err = infile.Read(buf)
 		if err != nil && err != io.EOF {
-			panic(err)
+			return err
 		}
 
 		if bufSize == 0 || err == io.EOF {
 			if offset < options.Offset {
-				panic("Offset out of range")
+				return errors.New("offset index out of range")
 			}
 			break
 		}
-
-		bufSize += carryLen
 		offset += int64(bufSize)
-		carryLen = 0
 		if offset < options.Offset {
 			continue
 		}
@@ -191,10 +248,10 @@ func DoAll2(options *Options) {
 		for ; i >= 0; i-- {
 			if utf8.RuneStart(bufLimited[i]) {
 				if !utf8.Valid(bufLimited[i:]) {
-					carryOver = bufLimited[i:]
+					infile.carryOver = bufLimited[i:]
 					bufLimited = bufLimited[:i]
-					carryLen = bufSize - i
-					offset -= int64(carryLen)
+					infile.carryLen = bufSize - i
+					offset -= int64(infile.carryLen)
 					bufSize = i
 				}
 				break
@@ -213,8 +270,8 @@ func DoAll2(options *Options) {
 			strTrimmed = strings.TrimRightFunc(strTrimmed, unicode.IsSpace)
 			bufSize = len(strTrimmed)
 			if bufSize != 0 {
-				if _, err = outfile.Write(bufSpaces); err != nil {
-					panic(err)
+				if err = outfile.Write(bufSpaces); err != nil {
+					return err
 				}
 				bufSpaces = nil
 			} else {
@@ -231,20 +288,14 @@ func DoAll2(options *Options) {
 		case lower:
 			bufConverted = Convert(bufConverted[:bufSize], bytes.ToLower)
 		}
-		bsize := uint64(bufSize)
-		for i := uint64(0); i < bsize; i += options.BlockSize {
-			writeLen := bsize
-			if bsize > i+options.BlockSize {
-				writeLen = i + options.BlockSize
-			}
-			if _, err = outfile.Write(bufConverted[i:writeLen]); err != nil {
-				panic(err)
-			}
+		if err = outfile.Write(bufConverted); err != nil {
+			return err
 		}
 	}
-	if _, err = outfile.Write(carryOver[:carryLen]); err != nil {
-		panic(err)
+	if err = outfile.Write(infile.carryOver[:infile.carryLen]); err != nil {
+		return err
 	}
+	return nil
 }
 
 func main() {
@@ -256,5 +307,8 @@ func main() {
 
 	//fmt.Println(opts)
 	// todo: implement the functional requirements described in read.me
-	DoAll2(opts)
+	if err := Execute(opts); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "can not do all:", err)
+		os.Exit(2)
+	}
 }
