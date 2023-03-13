@@ -52,7 +52,7 @@ func (dd *DD) setConvStatus(conversions *StringSlice) error {
 			return err
 		}
 	}
-	if lower == true && upper == true {
+	if lower && upper {
 		err = errors.New("can not apply 'upper_case' and 'lower_case' simultaneously")
 		return err
 	}
@@ -73,7 +73,7 @@ func New(options *Options) (*DD, error) {
 }
 
 func (dd *DD) Execute() error {
-	var err error = nil
+	var err error
 
 	dd.infile, err = Open(dd.From, dd.BlockSize)
 	if err != nil {
