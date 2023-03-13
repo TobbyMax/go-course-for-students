@@ -126,11 +126,11 @@ func (dd *DD) readConvertWrite() error {
 			return err
 		}
 		bufConverted := dd.Convert(bufTrimmed)
-		if err = dd.outfile.Write(bufConverted); err != nil {
+		if _, err = dd.outfile.Write(bufConverted); err != nil {
 			return err
 		}
 	}
-	if err = dd.outfile.Write(dd.infile.carryOver[:dd.infile.carryLen]); err != nil {
+	if _, err = dd.outfile.Write(dd.infile.carryOver[:dd.infile.carryLen]); err != nil {
 		return err
 	}
 	return nil
@@ -193,7 +193,7 @@ func (dd *DD) trimSpaces(b []byte) ([]byte, error) {
 		strTrimmed = strings.TrimRightFunc(strTrimmed, unicode.IsSpace)
 		dd.bufSize = len(strTrimmed)
 		if dd.bufSize != 0 {
-			if err := dd.outfile.Write(dd.bufSpaces); err != nil {
+			if _, err := dd.outfile.Write(dd.bufSpaces); err != nil {
 				return nil, err
 			}
 			dd.bufSpaces = nil
