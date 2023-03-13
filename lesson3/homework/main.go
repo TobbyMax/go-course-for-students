@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"os"
 )
 
@@ -33,25 +32,13 @@ func ParseFlags() (*Options, error) {
 	return &opts, nil
 }
 
-//type Converter interface {
-//	Convert(slice StringSlice)
-//}
-
-type DDReader interface {
-	io.Reader
-	io.Seeker
-	io.Writer
-	io.Closer
-	//Converter
-}
-
 func main() {
 	opts, err := ParseFlags()
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, "can not parse flags:", err)
 		os.Exit(1)
 	}
-	
+
 	dd, err := New(opts)
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, "can not do all:", err)
