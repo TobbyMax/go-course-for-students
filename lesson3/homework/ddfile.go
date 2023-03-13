@@ -15,8 +15,8 @@ type DDFile struct {
 
 func Open(path string, blockSize int) (*DDFile, error) {
 	var (
-		file       = os.Stdin
-		err  error = nil
+		file = os.Stdin
+		err  error
 	)
 	if path != "stdin" {
 		file, err = os.Open(path)
@@ -29,9 +29,10 @@ func Open(path string, blockSize int) (*DDFile, error) {
 
 func Create(path string, blockSize int) (*DDFile, error) {
 	var (
-		file       = os.Stdin
-		err  error = nil
+		file *os.File
+		err  error
 	)
+	file = os.Stdout
 	if path != "stdout" {
 		_, err = os.Stat(path)
 		if !errors.Is(err, os.ErrNotExist) {
