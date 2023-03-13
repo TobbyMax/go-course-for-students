@@ -32,7 +32,6 @@ func Create(path string, blockSize int) (*DDFile, error) {
 		file       = os.Stdin
 		err  error = nil
 	)
-	file = os.Stdout
 	if path != "stdout" {
 		_, err = os.Stat(path)
 		if !errors.Is(err, os.ErrNotExist) {
