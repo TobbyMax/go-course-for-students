@@ -64,16 +64,19 @@ func (ddf *DDFile) Read(b []byte) (int, error) {
 	return bufSize, err
 }
 
-func (ddf *DDFile) Write(b []byte) error {
-	var bufLen = len(b)
+func (ddf *DDFile) Write(b []byte) (int, error) {
+	var (
+		bufLen   = len(b)
+		writeLen = len(b)
+	)
 	for i := 0; i < bufLen; i += ddf.blockSize {
-		writeLen := bufLen
+		writeLen = bufLen
 		if bufLen > i+ddf.blockSize {
 			writeLen = i + ddf.blockSize
 		}
 		if _, err := ddf.file.Write(b[i:writeLen]); err != nil {
-			return err
+			return writeLen, err
 		}
 	}
-	return nil
+	return writeLen, nil
 }
