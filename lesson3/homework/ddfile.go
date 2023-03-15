@@ -112,11 +112,11 @@ func (ddf *DDFile) Write(b []byte) (int, error) {
 }
 
 func (ddf *DDFile) Seek(offset int64, whence int) (int64, error) {
-	if offset < 0 {
-		return ddf.currentOffset, errors.New("invalid offset")
-	}
 	if ddf.mode == 'w' {
 		return 0, errors.New("can not seek: file opened for writing only")
+	}
+	if offset < 0 {
+		return ddf.currentOffset, errors.New("invalid offset")
 	}
 	if ddf.file == os.Stdin {
 		switch {
