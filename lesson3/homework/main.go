@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -32,6 +33,66 @@ func ParseFlags() (*Options, error) {
 	return &opts, nil
 }
 
+func ReadConvertWrite(infile *DDFile, converter *DDConverter, outfile *DDFile) error {
+	buf := make([]byte, infile.GetBlockSize()+MAX_CARRY)
+	for {
+		n, err := infile.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return err
+			}
+		}
+		bufTrimmed := converter.Trim(buf[:n])
+		bufTailed := converter.AddTail(bufTrimmed)
+		bufConverted := converter.Transform(bufTailed)
+		if _, err = outfile.Write(bufConverted); err != nil {
+			return err
+		}
+	}
+	if _, err := outfile.Write(infile.GetCarryOver()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func DD(opts *Options) error {
+	infile, err := Open(opts.From, opts.BlockSize, opts.Limit)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := infile.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	outfile, err := Create(opts.To, opts.BlockSize)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := outfile.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	converter, err := NewDDConverter(&opts.Conv)
+	if err != nil {
+		return err
+	}
+	_, err = infile.Seek(opts.Offset, 0)
+	if err != nil {
+		return err
+	}
+	err = ReadConvertWrite(infile, converter, outfile)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func main() {
 	opts, err := ParseFlags()
 	if err != nil {
@@ -39,14 +100,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	dd, err := New(opts)
-	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "can not do all:", err)
+	if err := DD(opts); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "can not perform DD:", err)
 		os.Exit(2)
-	}
-
-	if err := dd.Execute(); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "can not do all:", err)
-		os.Exit(3)
 	}
 }
