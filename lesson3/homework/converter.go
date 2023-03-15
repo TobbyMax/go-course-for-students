@@ -36,13 +36,9 @@ type DDConverter struct {
 }
 
 func (ddc *DDConverter) setConvStatus(conversions *StringSlice) error {
-	var (
-		trim, upper, lower       = false, false, false
-		err                error = nil
-	)
+	trim, upper, lower := false, false, false
 	if len(*conversions) > 2 {
-		err = errors.New("too many arguments")
-		return err
+		return errors.New("too many arguments")
 	}
 	for _, key := range *conversions {
 		switch key {
@@ -53,20 +49,18 @@ func (ddc *DDConverter) setConvStatus(conversions *StringSlice) error {
 		case "lower_case":
 			lower = true
 		default:
-			err = errors.New("invalid conversion")
-			return err
+			return errors.New("invalid conversion")
 		}
 	}
 	if lower && upper {
-		err = errors.New("can not apply 'upper_case' and 'lower_case' simultaneously")
-		return err
+		return errors.New("can not apply 'upper_case' and 'lower_case' simultaneously")
 	}
 	ddc.trim, ddc.upper, ddc.lower = trim, upper, lower
-	return err
+	return nil
 }
 
 func NewDDConverter(conversions *StringSlice) (*DDConverter, error) {
-	var ddc = DDConverter{}
+	ddc := DDConverter{}
 	ddc.start = true
 	err := ddc.setConvStatus(conversions)
 	if err != nil {
