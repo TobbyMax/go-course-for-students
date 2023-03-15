@@ -7,7 +7,22 @@ import (
 	"unicode/utf8"
 )
 
-const MAX_CARRY = 3
+const MaxCarry = 3
+
+type BlockSizeGetter interface {
+	GetBlockSize() int
+}
+
+type CarryOverGetter interface {
+	GetCarryOver() []byte
+}
+
+type BlockReadSeekWriter interface {
+	io.ReadSeekCloser
+	io.Writer
+	BlockSizeGetter
+	CarryOverGetter
+}
 
 type DDFile struct {
 	file          *os.File
@@ -32,7 +47,7 @@ func Open(path string, blockSize int, limit int64) (*DDFile, error) {
 			return nil, err
 		}
 	}
-	return &DDFile{file: file, mode: 'r', blockSize: blockSize, carryOver: make([]byte, MAX_CARRY), limit: limit}, nil
+	return &DDFile{file: file, mode: 'r', blockSize: blockSize, carryOver: make([]byte, MaxCarry), limit: limit}, nil
 }
 
 func Create(path string, blockSize int) (*DDFile, error) {
@@ -167,5 +182,8 @@ func (ddf *DDFile) GetBlockSize() int {
 }
 
 func (ddf *DDFile) GetCarryOver() []byte {
+	if ddf.mode == 'w' {
+		return nil
+	}
 	return ddf.carryOver[:ddf.carryLen]
 }
