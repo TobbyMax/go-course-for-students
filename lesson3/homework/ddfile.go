@@ -55,7 +55,7 @@ func Create(path string, blockSize int) (*DDFile, error) {
 	if path != "stdout" {
 		_, err := os.Stat(path)
 		if !errors.Is(err, os.ErrNotExist) {
-			panic("Outfile already exists")
+			return nil, errors.New("outfile already exists")
 		}
 		file, err = os.Create(path)
 		if err != nil {
