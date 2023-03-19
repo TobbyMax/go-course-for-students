@@ -79,8 +79,6 @@ func (s *sizer) worker(ctx context.Context, result *Result, errs chan<- error) {
 // Size calculates size of a given directory
 func (s *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	runtime.GOMAXPROCS(4)
-	ctxWithCancel, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	result := Result{}
 	errs := make(chan error)
@@ -91,6 +89,8 @@ func (s *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	s.dirs <- d
 	s.queueLen++
 
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
 	for i := 0; i < s.maxWorkersCount; i++ {
 		go s.worker(ctxWithCancel, &result, errs)
 	}
@@ -100,7 +100,7 @@ func (s *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 		case err := <-errs:
 			return Result{}, err
 		default:
-			if s.queueLen == 0 {
+			if atomic.LoadInt64(&s.queueLen) == 0 {
 				return result, nil
 			}
 		}
