@@ -2,8 +2,9 @@ package storage
 
 import (
 	"context"
+	"math"
 	"runtime"
-	"sync"
+	"sync/atomic"
 )
 
 // Result represents the Size function result
@@ -24,69 +25,27 @@ type DirSizer interface {
 type sizer struct {
 	// maxWorkersCount number of workers for asynchronous run
 	maxWorkersCount int
-
-	// TODO: add other fields as you wish
-	subDirs chan Dir
-	result  chan Result
+	// dirs queue of subdirectories to calculate size
+	dirs chan Dir
+	// queueLen length of dirs queue
+	queueLen int64
 }
 
-const WorkerCount = 2
+const WorkerCount = 4
 
 // NewSizer returns new DirSizer instance
 func NewSizer() DirSizer {
 	return &sizer{
 		maxWorkersCount: WorkerCount,
-		subDirs:         make(chan Dir, 10000),
-		result:          make(chan Result, WorkerCount+1),
 	}
 }
 
-func worker2(ctx context.Context, wg *sync.WaitGroup, dirs <-chan Dir, result chan Result, errs chan<- error) {
-	defer wg.Done()
-	workerRes := Result{}
+// worker a unit that calculates Size
+func (s *sizer) worker(ctx context.Context, result *Result, errs chan<- error) {
 	for {
 		select {
-		case dir, ok := <-dirs:
+		case dir, ok := <-s.dirs:
 			if !ok {
-				res := <-result
-				res.Size += workerRes.Size
-				res.Count += workerRes.Count
-				result <- res
-				return
-			}
-			_, files, err := dir.Ls(ctx)
-			if err != nil {
-				//errs <- err
-				return
-			}
-			for _, file := range files {
-				fileSize, err := file.Stat(ctx)
-				if err != nil {
-					//errs <- err
-					return
-				}
-				runtime.Gosched()
-				workerRes.Count++
-				workerRes.Size += fileSize
-			}
-		case <-ctx.Done():
-			res := <-result
-			res.Size += workerRes.Size
-			res.Count += workerRes.Count
-			result <- res
-			return
-		}
-	}
-}
-
-func worker(ctx context.Context, wg *sync.WaitGroup, dirs chan Dir, result chan Result, errs chan<- error) {
-	defer wg.Done()
-	//workerRes := Result{}
-	for len(dirs) > 0 {
-		select {
-		case dir, ok := <-dirs:
-			if !ok {
-				//result <- workerRes
 				return
 			}
 			subDirs, files, err := dir.Ls(ctx)
@@ -95,59 +54,54 @@ func worker(ctx context.Context, wg *sync.WaitGroup, dirs chan Dir, result chan 
 				return
 			}
 			for _, d := range subDirs {
-				dirs <- d
+				s.dirs <- d
 			}
-			workerRes := Result{}
+
+			dirSize := int64(0)
 			for _, file := range files {
 				fileSize, err := file.Stat(ctx)
 				if err != nil {
 					errs <- err
 					return
 				}
-				workerRes.Size += fileSize
+				dirSize += fileSize
 			}
-			runtime.Gosched()
-			res := <-result
-			res.Size += workerRes.Size
-			res.Count += int64(len(files))
-			result <- res
+			atomic.AddInt64(&result.Count, int64(len(files)))
+			atomic.AddInt64(&result.Size, dirSize)
+			atomic.AddInt64(&s.queueLen, int64(len(subDirs))-1)
+
 		case <-ctx.Done():
-			//result <- workerRes
 			return
 		}
 	}
-	errs <- nil
 }
 
+// Size calculates size of a given directory
 func (s *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	runtime.GOMAXPROCS(4)
-	var wg sync.WaitGroup
 	ctxWithCancel, cancel := context.WithCancel(ctx)
-	s.result <- Result{}
-	errs := make(chan error)
 	defer cancel()
 
-	//res := Result{}
-	s.subDirs <- d
+	result := Result{}
+	errs := make(chan error)
+	defer close(errs)
+
+	s.dirs = make(chan Dir, math.MaxInt16)
+	defer close(s.dirs)
+	s.dirs <- d
+	s.queueLen++
+
 	for i := 0; i < s.maxWorkersCount; i++ {
-		wg.Add(1)
-		go worker(ctxWithCancel, &wg, s.subDirs, s.result, errs)
+		go s.worker(ctxWithCancel, &result, errs)
 	}
-	//wg.Wait()
-	//res = <-s.result
-	//return res, nil\
-	count := 0
+
 	for {
 		select {
-		case err, _ := <-errs:
-			if err == nil {
-				count++
-			} else {
-				return Result{}, err
-			}
-			if count == s.maxWorkersCount {
-				cancel()
-				return <-s.result, nil
+		case err := <-errs:
+			return Result{}, err
+		default:
+			if s.queueLen == 0 {
+				return result, nil
 			}
 		}
 	}
