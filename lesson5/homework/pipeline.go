@@ -31,10 +31,12 @@ func checkContext(ctx context.Context, in In) Out {
 }
 
 func ExecutePipeline(ctx context.Context, in In, stages ...Stage) Out {
-	out := in
+	// добавил проверку в начале, чтобы точно закрыть все каналы и завершились все горутины
+	in = checkContext(ctx, in)
 	for _, stage := range stages {
-		out = stage(out)
+		in = stage(in)
 	}
-	res := checkContext(ctx, out)
-	return res
+	// проверка в конце, чтобы вывод в результирующий канал прекратился сразу с отменой контекста
+	out := checkContext(ctx, in)
+	return out
 }
