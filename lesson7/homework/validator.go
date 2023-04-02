@@ -42,8 +42,12 @@ func (v ValidationErrors) Error() string {
 func validateString(val reflect.Value, st string, ve *ValidationErrors) error {
 	str := val.String()
 	if strings.Contains(st, "min") {
-		min := 0
-		_, err := fmt.Sscanf(st, "min:%s", &min)
+		var s string
+		_, err := fmt.Sscanf(st, "min:%s", &s)
+		if err != nil {
+			return ErrInvalidValidatorSyntax
+		}
+		min, err := strconv.Atoi(s)
 		if err != nil {
 			return ErrInvalidValidatorSyntax
 		}
@@ -53,8 +57,12 @@ func validateString(val reflect.Value, st string, ve *ValidationErrors) error {
 		}
 	}
 	if strings.Contains(st, "max") {
-		max := 0
-		_, err := fmt.Sscanf(st, "max:%d", &max)
+		var s string
+		_, err := fmt.Sscanf(st, "max:%s", &s)
+		if err != nil {
+			return ErrInvalidValidatorSyntax
+		}
+		max, err := strconv.Atoi(s)
 		if err != nil {
 			return ErrInvalidValidatorSyntax
 		}
@@ -63,8 +71,12 @@ func validateString(val reflect.Value, st string, ve *ValidationErrors) error {
 		}
 	}
 	if strings.Contains(st, "len") {
-		l := 0
-		_, err := fmt.Sscanf(st, "len:%d", &l)
+		var s string
+		_, err := fmt.Sscanf(st, "len:%s", &s)
+		if err != nil {
+			return ErrInvalidValidatorSyntax
+		}
+		l, err := strconv.Atoi(s)
 		if err != nil {
 			return ErrInvalidValidatorSyntax
 		}
@@ -92,8 +104,12 @@ func validateString(val reflect.Value, st string, ve *ValidationErrors) error {
 func validateInt(val reflect.Value, st string, ve *ValidationErrors) error {
 	num := val.Int()
 	if strings.Contains(st, "min") {
-		min := 0
-		_, err := fmt.Sscanf(st, "min:%d", &min)
+		var s string
+		_, err := fmt.Sscanf(st, "min:%s", &s)
+		if err != nil {
+			return ErrInvalidValidatorSyntax
+		}
+		min, err := strconv.Atoi(s)
 		if err != nil {
 			return ErrInvalidValidatorSyntax
 		}
@@ -102,8 +118,12 @@ func validateInt(val reflect.Value, st string, ve *ValidationErrors) error {
 		}
 	}
 	if strings.Contains(st, "max") {
-		max := 0
-		_, err := fmt.Sscanf(st, "max:%d", &max)
+		var s string
+		_, err := fmt.Sscanf(st, "max:%s", &s)
+		if err != nil {
+			return ErrInvalidValidatorSyntax
+		}
+		max, err := strconv.Atoi(s)
 		if err != nil {
 			return ErrInvalidValidatorSyntax
 		}
