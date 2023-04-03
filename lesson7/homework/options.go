@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+var Min = "min"
+var Max = "max"
+var Len = "len"
+var In = "in"
+
 type Options struct {
 	Numeric map[string]int
 	InStr   []string
@@ -59,7 +64,7 @@ func (o *Options) parseInOption(t any, st string) error {
 }
 
 func ParseOptions[T int | string](st string) (Options, error) {
-	numerical := []string{"min", "max", "len"}
+	numerical := []string{Min, Max, Len}
 	opts := Options{Numeric: make(map[string]int)}
 	for _, opt := range numerical {
 		err := opts.getOptionNum(st, opt)
