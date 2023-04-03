@@ -21,7 +21,7 @@ func (v ValidationErrors) Error() string {
 	for i, ve := range v {
 		res = res + fmt.Sprint(ve.Err)
 		if i != len(v)-1 {
-			res = res + "; "
+			res = res + ";\n"
 		}
 	}
 	return res
