@@ -40,9 +40,9 @@ func (v *Validator) getFieldOptions(kind reflect.Kind, tag string) Options {
 	)
 	switch kind {
 	case reflect.String:
-		opts, err = ParseOptions[string](tag)
+		opts, err = ParseOptions(kind, tag)
 	case reflect.Int:
-		opts, err = ParseOptions[int](tag)
+		opts, err = ParseOptions(kind, tag)
 	default:
 		err = errors.Errorf("field of type %s can not be validated", kind)
 	}
