@@ -1,7 +1,9 @@
 package homework
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 var ErrNotStruct = errors.New("wrong argument given, should be a struct")
@@ -15,11 +17,28 @@ type ValidationError struct {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	// TODO: implement this
-	return ""
+	res := ""
+	for i, ve := range v {
+		res = res + fmt.Sprint(ve.Err)
+		if i != len(v)-1 {
+			res = res + ";\n"
+		}
+	}
+	return res
 }
 
 func Validate(v any) error {
-	// TODO: implement this
+	t := reflect.TypeOf(v)
+	val := reflect.ValueOf(v)
+	vld := Validator{}
+	if t.Kind() != reflect.Struct {
+		return ErrNotStruct
+	}
+	for i := 0; i < t.NumField(); i++ {
+		vld.ValidateField(t.Field(i), val.Field(i))
+	}
+	if len(vld.Errors) != 0 {
+		return vld.Errors
+	}
 	return nil
 }
