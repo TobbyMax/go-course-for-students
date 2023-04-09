@@ -13,29 +13,6 @@ const (
 	In  = "in"
 )
 
-type Validatable interface {
-	int | string
-}
-
-type Option interface {
-	Validate(val reflect.Value)
-}
-
-//type Numeric interface {
-//	Set(val int)
-//	Validate(val reflect.Value)
-//}
-//
-//type
-
-//type Options[T Validatable] struct {
-//	s []Option
-//}
-//
-//type max[T Validatable] struct {
-//	val int
-//}
-
 type Options struct {
 	// Numeric map to store 'min', 'max' and 'len' options
 	Numeric map[string]int
@@ -44,9 +21,10 @@ type Options struct {
 	InStr []string
 	// InInt slice of integers, if 'in' option is applied to an integer
 	InInt []int
+	Field reflect.StructField
 }
 
-// parseNumericOption parses 'len', 'max', 'min' options
+// getNumericOption parses 'len', 'max', 'min' options
 func (o *Options) getNumericOption(opt string, val string) error {
 	n, err := strconv.Atoi(val)
 	if err != nil {
@@ -108,4 +86,13 @@ func ParseOptions(kind reflect.Kind, st string) (Options, error) {
 		}
 	}
 	return opts, nil
+}
+
+func contains[T comparable](set []T, val T) bool {
+	for _, v := range set {
+		if v == val {
+			return true
+		}
+	}
+	return false
 }
