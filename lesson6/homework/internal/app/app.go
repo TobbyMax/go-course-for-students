@@ -9,14 +9,12 @@ type App interface {
 	CreateAd(ctx context.Context, title string, text string, uid int64) (*ads.Ad, error)
 	ChangeAdStatus(ctx context.Context, id int64, uid int64, published bool) (*ads.Ad, error)
 	UpdateAd(ctx context.Context, id int64, uid int64, title string, text string) (*ads.Ad, error)
-	// TODO: реализовать
 }
 
 type Repository interface {
 	AddAd(ctx context.Context, ad ads.Ad) (int64, error)
 	ChangeAdStatus(ctx context.Context, id int64, uid int64, published bool) (*ads.Ad, error)
 	ChangeAdContent(id int64, uid int64, title string, text string) (*ads.Ad, error)
-	// TODO: реализовать
 }
 
 type AdApp struct {
@@ -24,11 +22,11 @@ type AdApp struct {
 }
 
 func NewApp(repo Repository) App {
-	return NewAdApp(repo) // TODO: реализовать
+	return NewAdApp(repo)
 }
 
 func NewAdApp(repo Repository) *AdApp {
-	return &AdApp{repository: repo} // TODO: реализовать
+	return &AdApp{repository: repo}
 }
 
 func (a AdApp) CreateAd(ctx context.Context, title string, text string, uid int64) (*ads.Ad, error) {
