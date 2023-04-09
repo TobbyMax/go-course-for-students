@@ -11,7 +11,7 @@ var ErrIDNotFound = fmt.Errorf("ad with such id does not exist")
 var ErrForbidden = fmt.Errorf("forbidden")
 
 func New() app.Repository {
-	return NewRepositorySlice() // TODO: реализовать
+	return NewRepositorySlice()
 }
 
 type RepositoryMap struct {
