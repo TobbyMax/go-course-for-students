@@ -367,6 +367,36 @@ func TestValidate(t *testing.T) {
 				return errors.As(err, e) && e.Error() == "field of type float64 can not be validated"
 			},
 		},
+		{
+			name: "multiple constraints: valid",
+			args: args{
+				v: struct {
+					MinMax int `validate:"min:12; max: 15"`
+				}{
+					MinMax: 13,
+				},
+			},
+			wantErr: false,
+			checkErr: func(err error) bool {
+				assert.Len(t, err.(ValidationErrors), 1)
+				return true
+			},
+		},
+		{
+			name: "multiple constraints: invalid",
+			args: args{
+				v: struct {
+					MinMax string `validate:"min:12; max:15"`
+				}{
+					MinMax: "spkjishu",
+				},
+			},
+			wantErr: true,
+			checkErr: func(err error) bool {
+				assert.Len(t, err.(ValidationErrors), 1)
+				return true
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
