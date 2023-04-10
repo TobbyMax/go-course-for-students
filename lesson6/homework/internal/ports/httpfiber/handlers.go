@@ -1,6 +1,7 @@
 package httpfiber
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/TobbyMax/validator"
@@ -19,15 +20,15 @@ func createAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		if err = validator.Validate(reqBody); err != nil {
-			c.Status(http.StatusBadRequest)
-			return c.JSON(AdErrorResponse(err))
-		}
-
 		ad, err := a.CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
 
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			switch {
+			case errors.As(err, &validator.ValidationErrors{}):
+				c.Status(http.StatusBadRequest)
+			default:
+				c.Status(http.StatusInternalServerError)
+			}
 			return c.JSON(AdErrorResponse(err))
 		}
 		return c.JSON(AdSuccessResponse(ad))
@@ -52,7 +53,12 @@ func changeAdStatus(a app.App) fiber.Handler {
 		ad, err := a.ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
 
 		if err != nil {
-			c.Status(http.StatusForbidden)
+			switch {
+			case errors.Is(err, app.ErrForbidden):
+				c.Status(http.StatusForbidden)
+			default:
+				c.Status(http.StatusInternalServerError)
+			}
 			return c.JSON(AdErrorResponse(err))
 		}
 
@@ -75,15 +81,17 @@ func updateAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		if err = validator.Validate(reqBody); err != nil {
-			c.Status(http.StatusBadRequest)
-			return c.JSON(AdErrorResponse(err))
-		}
-
 		ad, err := a.UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 
 		if err != nil {
-			c.Status(http.StatusForbidden)
+			switch {
+			case errors.As(err, &validator.ValidationErrors{}):
+				c.Status(http.StatusBadRequest)
+			case errors.Is(err, app.ErrForbidden):
+				c.Status(http.StatusForbidden)
+			default:
+				c.Status(http.StatusInternalServerError)
+			}
 			return c.JSON(AdErrorResponse(err))
 		}
 
