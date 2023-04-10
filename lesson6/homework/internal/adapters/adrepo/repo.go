@@ -8,7 +8,6 @@ import (
 )
 
 var ErrIDNotFound = fmt.Errorf("ad with such id does not exist")
-var ErrForbidden = fmt.Errorf("forbidden")
 
 func New() app.Repository {
 	return NewRepositorySlice()
@@ -28,29 +27,31 @@ func (r RepositoryMap) AddAd(ctx context.Context, ad ads.Ad) (int64, error) {
 	return ad.ID, nil
 }
 
-func (r RepositoryMap) ChangeAdStatus(ctx context.Context, id int64, uid int64, published bool) (*ads.Ad, error) {
-	ad := &ads.Ad{}
-	if _, ok := r.data[id]; !ok {
-		return ad, ErrIDNotFound
+func (r RepositoryMap) GetAdByID(ctx context.Context, id int64) (*ads.Ad, error) {
+	if ad, ok := r.data[id]; !ok {
+		return nil, ErrIDNotFound
+	} else {
+		return &ad, nil
 	}
-	if r.data[id].AuthorID != uid {
-		return ad, ErrForbidden
-	}
-	*ad = r.data[id]
-	ad.Published = published
-	return ad, nil
 }
 
-func (r RepositoryMap) ChangeAdContent(id int64, uid int64, title string, text string) (*ads.Ad, error) {
-	ad := &ads.Ad{}
+func (r RepositoryMap) UpdateAdStatus(ctx context.Context, id int64, published bool) error {
 	if _, ok := r.data[id]; !ok {
-		return ad, ErrIDNotFound
+		return ErrIDNotFound
 	}
-	if r.data[id].AuthorID != uid {
-		return ad, ErrForbidden
+	ad := r.data[id]
+	ad.Published = published
+	r.data[id] = ad
+	return nil
+}
+
+func (r RepositoryMap) UpdateAdContent(ctx context.Context, id int64, title string, text string) error {
+	if _, ok := r.data[id]; !ok {
+		return ErrIDNotFound
 	}
-	*ad = r.data[id]
+	ad := r.data[id]
 	ad.Title = title
 	ad.Text = text
-	return ad, nil
+	r.data[id] = ad
+	return nil
 }
