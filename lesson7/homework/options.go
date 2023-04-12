@@ -1,16 +1,17 @@
 package homework
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
-var Min = "min"
-var Max = "max"
-var Len = "len"
-var In = "in"
+const (
+	Min = "min"
+	Max = "max"
+	Len = "len"
+	In  = "in"
+)
 
 type Options struct {
 	// Numeric map to store 'min', 'max' and 'len' options
@@ -20,71 +21,78 @@ type Options struct {
 	InStr []string
 	// InInt slice of integers, if 'in' option is applied to an integer
 	InInt []int
+	Field reflect.StructField
 }
 
-// getOption parses tag string to get value after option
-func (*Options) getOption(str string, opt string) (string, error) {
-	var s string
-	_, err := fmt.Sscanf(str, opt+":%s", &s)
+// getNumericOption parses 'len', 'max', 'min' options
+func (o *Options) getNumericOption(opt string, val string) error {
+	n, err := strconv.Atoi(val)
 	if err != nil {
-		return "", ErrInvalidValidatorSyntax
+		return ErrInvalidValidatorSyntax
 	}
-	return s, nil
+	o.Numeric[opt] = n
+	return nil
 }
 
-// parseNumericOption parses 'len', 'max', 'min' options
-func (o *Options) parseNumericOption(str string, opt string) error {
-	if strings.Contains(str, opt) {
-		s, err := o.getOption(str, opt)
-		if err != nil {
-			return ErrInvalidValidatorSyntax
+// parseInOption creates only slice InStr if 'kind' is a string
+// or slices InStr and InInt, if 'kind' is an integer
+func (o *Options) parseInOption(kind reflect.Kind, s string) error {
+	o.InStr = strings.Split(s, ",")
+	if kind == reflect.Int {
+		o.InInt = make([]int, len(o.InStr))
+		for i, v := range o.InStr {
+			n, err := strconv.Atoi(v)
+			if err != nil {
+				return ErrInvalidValidatorSyntax
+			}
+			o.InInt[i] = n
 		}
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			return ErrInvalidValidatorSyntax
-		}
-		o.Numeric[opt] = n
 	}
 	return nil
 }
 
-// parseInOption creates only slice InStr if 't' is a string
-// or slices InStr and InInt, if 't' is an integer
-func (o *Options) parseInOption(t any, st string) error {
-	if strings.Contains(st, "in") && !strings.Contains(st, "min") {
-		s, err := o.getOption(st, "in")
+func (o *Options) setOption(kind reflect.Kind, opt string, val string) error {
+	numeric := []string{Min, Max, Len}
+	if len(val) == 0 {
+		return ErrInvalidValidatorSyntax
+	}
+	switch {
+	case contains(numeric, opt):
+		err := o.getNumericOption(opt, val)
 		if err != nil {
-			return ErrInvalidValidatorSyntax
+			return err
 		}
-		o.InStr = strings.Split(s, ",")
-		if reflect.TypeOf(t).Kind() == reflect.Int {
-			o.InInt = make([]int, len(o.InStr))
-			for i, v := range o.InStr {
-				n, err := strconv.Atoi(v)
-				if err != nil {
-					return ErrInvalidValidatorSyntax
-				}
-				o.InInt[i] = n
-			}
+	case opt == In:
+		err := o.parseInOption(kind, val)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 // ParseOptions parses tag string to retrieve constraint options
-func ParseOptions[T int | string](st string) (Options, error) {
-	numerical := []string{Min, Max, Len}
+func ParseOptions(kind reflect.Kind, st string) (Options, error) {
 	opts := Options{Numeric: make(map[string]int)}
-	for _, opt := range numerical {
-		err := opts.parseNumericOption(st, opt)
+	for _, s := range strings.Split(st, ";") {
+		optVal := strings.Split(s, ":")
+		if len(optVal) != 2 {
+			return Options{}, ErrInvalidValidatorSyntax
+		}
+		opt, val := strings.Trim(optVal[0], " "), strings.Trim(optVal[1], " ")
+		err := opts.setOption(kind, opt, val)
 		if err != nil {
 			return Options{}, err
 		}
 	}
-	var t T
-	err := opts.parseInOption(t, st)
-	if err != nil {
-		return Options{}, err
-	}
 	return opts, nil
+}
+
+func contains[T comparable](set []T, val T) bool {
+	for _, v := range set {
+		if v == val {
+			return true
+		}
+	}
+	return false
 }
