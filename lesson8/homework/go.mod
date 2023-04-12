@@ -3,8 +3,8 @@ module homework8
 go 1.19
 
 require (
+	github.com/TobbyMax/validator v1.2.3
 	github.com/gin-gonic/gin v1.9.0
-	github.com/gofiber/adaptor/v2 v2.2.0
 	github.com/gofiber/fiber/v2 v2.43.0
 	github.com/stretchr/testify v1.8.2
 )
@@ -31,6 +31,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
