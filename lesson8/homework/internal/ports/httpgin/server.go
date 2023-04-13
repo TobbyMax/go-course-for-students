@@ -18,8 +18,9 @@ func NewHTTPServer(port string, a app.App) Server {
 	s := Server{port: port, app: gin.New()}
 
 	// todo: add your own logic
-
 	api := s.app.Group("/api/v1")
+	api.Use(gin.Logger())
+	api.Use(gin.Recovery())
 	AppRouter(api, a)
 	return s
 }
