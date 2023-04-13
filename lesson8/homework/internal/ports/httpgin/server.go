@@ -19,8 +19,11 @@ func NewHTTPServer(port string, a app.App) Server {
 
 	// todo: add your own logic
 	api := s.app.Group("/api/v1")
+
+	// MiddleWare для логирования и паник
 	api.Use(gin.Logger())
 	api.Use(gin.Recovery())
+
 	AppRouter(api, a)
 	return s
 }
