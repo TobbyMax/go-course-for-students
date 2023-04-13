@@ -5,6 +5,7 @@ import (
 	"github.com/TobbyMax/validator"
 	"github.com/gin-gonic/gin"
 	"homework8/internal/app"
+	"io"
 	"net/http"
 	"strconv"
 	//"github.com/gofiber/fiber/v2"
@@ -124,8 +125,13 @@ func getAd(a app.App) gin.HandlerFunc {
 // Метод для получения объявления по id
 func listAds(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var reqBody listAdsRequest
+		if err := c.ShouldBindJSON(&reqBody); err != nil && err != io.EOF {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
 
-		al, err := a.ListAds(c)
+		al, err := a.ListAds(c, reqBody.Published, reqBody.UserID, reqBody.Date)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
@@ -135,80 +141,95 @@ func listAds(a app.App) gin.HandlerFunc {
 	}
 }
 
-//// Метод для создания объявления (ad)
-//func createUser(a app.App) gin.HandlerFunc {
-//	return func(c *gin.Context) {
-//		var reqBody createUserRequest
-//		err := c.Bind(&reqBody)
-//		if err != nil {
-//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-//			return
-//		}
-//
-//		ad, err := a.CreateUser(c, reqBody.Nickname, reqBody.Email)
-//
-//		if err != nil {
-//			switch {
-//			case errors.As(err, &validator.ValidationErrors{}):
-//				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-//			default:
-//				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-//			}
-//			return
-//		}
-//		c.JSON(http.StatusOK, AdSuccessResponse(ad))
-//	}
-//}
-//
-//// Метод для обновления текста(Text) или заголовка(Title) объявления
-//func updateUser(a app.App) gin.HandlerFunc {
-//	return func(c *gin.Context) {
-//		var reqBody updateAdRequest
-//		if err := c.Bind(&reqBody); err != nil {
-//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-//			return
-//		}
-//
-//		adIDStr := c.Param("user_id")
-//		adID, err := strconv.Atoi(adIDStr)
-//		if err != nil {
-//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-//			return
-//		}
-//
-//		ad, err := a.UpdateAd(c, int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
-//
-//		if err != nil {
-//			switch {
-//			case errors.As(err, &validator.ValidationErrors{}):
-//				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-//			case errors.Is(err, app.ErrForbidden):
-//				c.JSON(http.StatusForbidden, AdErrorResponse(err))
-//			default:
-//				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-//			}
-//			return
-//		}
-//		c.JSON(http.StatusOK, AdSuccessResponse(ad))
-//	}
-//}
-//
-//// Метод для получения объявления по id
-//func getUser(a app.App) gin.HandlerFunc {
-//	return func(c *gin.Context) {
-//		adIDStr := c.Param("user_id")
-//		adID, err := strconv.Atoi(adIDStr)
-//		if err != nil {
-//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-//			return
-//		}
-//
-//		ad, err := a.GetAd(c, int64(adID))
-//
-//		if err != nil {
-//			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-//			return
-//		}
-//		c.JSON(http.StatusOK, AdSuccessResponse(ad))
-//	}
-//}
+// Метод для поиска объявлений по имени
+func findAdsByTitle(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		title := c.Param("title")
+		
+		al, err := a.FindAdsByTitle(c, title)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			return
+		}
+		c.JSON(http.StatusOK, AdListSuccessResponse(al))
+	}
+}
+
+// Метод для создания пользователя
+func createUser(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var reqBody createUserRequest
+		err := c.Bind(&reqBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			return
+		}
+
+		u, err := a.CreateUser(c, reqBody.Nickname, reqBody.Email)
+
+		if err != nil {
+			switch {
+			case errors.As(err, &validator.ValidationErrors{}):
+				c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, UserSuccessResponse(u))
+	}
+}
+
+// Метод для обновления текста(Text) или заголовка(Title) объявления
+func updateUser(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var reqBody updateUserRequest
+		if err := c.Bind(&reqBody); err != nil {
+			c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			return
+		}
+
+		userIDStr := c.Param("user_id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			return
+		}
+
+		u, err := a.UpdateUser(c, int64(userID), reqBody.Nickname, reqBody.Email)
+
+		if err != nil {
+			switch {
+			case errors.As(err, &validator.ValidationErrors{}):
+				c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			case errors.Is(err, app.ErrForbidden):
+				c.JSON(http.StatusForbidden, UserErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, UserSuccessResponse(u))
+	}
+}
+
+// Метод для получения объявления по id
+func getUser(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userIDStr := c.Param("user_id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			return
+		}
+
+		u, err := a.GetUser(c, int64(userID))
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
+			return
+		}
+		c.JSON(http.StatusOK, UserSuccessResponse(u))
+	}
+}
