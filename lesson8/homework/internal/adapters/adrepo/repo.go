@@ -55,3 +55,13 @@ func (r RepositoryMap) UpdateAdContent(ctx context.Context, id int64, title stri
 	r.data[id] = ad
 	return nil
 }
+
+func (r RepositoryMap) GetPublishedAds(ctx context.Context) (*ads.AdList, error) {
+	al := ads.AdList{Data: make([]ads.Ad, 0)}
+	for _, ad := range r.data {
+		if ad.Published {
+			al.Data = append(al.Data, ad)
+		}
+	}
+	return &al, nil
+}

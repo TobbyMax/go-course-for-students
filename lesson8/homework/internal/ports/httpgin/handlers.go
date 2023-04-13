@@ -1,0 +1,214 @@
+package httpgin
+
+import (
+	"errors"
+	"github.com/TobbyMax/validator"
+	"github.com/gin-gonic/gin"
+	"homework8/internal/app"
+	"net/http"
+	"strconv"
+	//"github.com/gofiber/fiber/v2"
+)
+
+type Handler = func(*gin.Context) error
+
+// Метод для создания объявления (ad)
+func createAd(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var reqBody createAdRequest
+		err := c.Bind(&reqBody)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		ad, err := a.CreateAd(c, reqBody.Title, reqBody.Text, reqBody.UserID)
+
+		if err != nil {
+			switch {
+			case errors.As(err, &validator.ValidationErrors{}):
+				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+	}
+}
+
+// Метод для изменения статуса объявления (опубликовано - Published = true или снято с публикации Published = false)
+func changeAdStatus(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var reqBody changeAdStatusRequest
+		if err := c.Bind(&reqBody); err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		adIDStr := c.Param("ad_id")
+		adID, err := strconv.Atoi(adIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		ad, err := a.ChangeAdStatus(c, int64(adID), reqBody.UserID, reqBody.Published)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, app.ErrForbidden):
+				c.JSON(http.StatusForbidden, AdErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+	}
+}
+
+// Метод для обновления текста(Text) или заголовка(Title) объявления
+func updateAd(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var reqBody updateAdRequest
+		if err := c.Bind(&reqBody); err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		adIDStr := c.Param("ad_id")
+		adID, err := strconv.Atoi(adIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		ad, err := a.UpdateAd(c, int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
+
+		if err != nil {
+			switch {
+			case errors.As(err, &validator.ValidationErrors{}):
+				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			case errors.Is(err, app.ErrForbidden):
+				c.JSON(http.StatusForbidden, AdErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+	}
+}
+
+// Метод для получения объявления по id
+func getAd(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		adIDStr := c.Param("ad_id")
+		adID, err := strconv.Atoi(adIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		ad, err := a.GetAd(c, int64(adID))
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			return
+		}
+		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+	}
+}
+
+// Метод для получения объявления по id
+func listAds(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		al, err := a.ListAds(c)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			return
+		}
+		c.JSON(http.StatusOK, AdListSuccessResponse(al))
+	}
+}
+
+//// Метод для создания объявления (ad)
+//func createUser(a app.App) gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//		var reqBody createUserRequest
+//		err := c.Bind(&reqBody)
+//		if err != nil {
+//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+//			return
+//		}
+//
+//		ad, err := a.CreateUser(c, reqBody.Nickname, reqBody.Email)
+//
+//		if err != nil {
+//			switch {
+//			case errors.As(err, &validator.ValidationErrors{}):
+//				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+//			default:
+//				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+//			}
+//			return
+//		}
+//		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+//	}
+//}
+//
+//// Метод для обновления текста(Text) или заголовка(Title) объявления
+//func updateUser(a app.App) gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//		var reqBody updateAdRequest
+//		if err := c.Bind(&reqBody); err != nil {
+//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+//			return
+//		}
+//
+//		adIDStr := c.Param("user_id")
+//		adID, err := strconv.Atoi(adIDStr)
+//		if err != nil {
+//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+//			return
+//		}
+//
+//		ad, err := a.UpdateAd(c, int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
+//
+//		if err != nil {
+//			switch {
+//			case errors.As(err, &validator.ValidationErrors{}):
+//				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+//			case errors.Is(err, app.ErrForbidden):
+//				c.JSON(http.StatusForbidden, AdErrorResponse(err))
+//			default:
+//				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+//			}
+//			return
+//		}
+//		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+//	}
+//}
+//
+//// Метод для получения объявления по id
+//func getUser(a app.App) gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//		adIDStr := c.Param("user_id")
+//		adID, err := strconv.Atoi(adIDStr)
+//		if err != nil {
+//			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+//			return
+//		}
+//
+//		ad, err := a.GetAd(c, int64(adID))
+//
+//		if err != nil {
+//			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+//			return
+//		}
+//		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+//	}
+//}
