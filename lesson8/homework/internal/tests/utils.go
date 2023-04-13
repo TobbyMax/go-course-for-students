@@ -175,3 +175,29 @@ func (tc *testClient) listAds() (adsResponse, error) {
 
 	return response, nil
 }
+
+func (tc *testClient) listAdsByUser(userID int64) (adsResponse, error) {
+	body := map[string]any{
+		"user_id": userID,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
