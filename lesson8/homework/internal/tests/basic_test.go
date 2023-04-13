@@ -82,3 +82,21 @@ func TestListAds(t *testing.T) {
 	assert.Equal(t, ads.Data[0].AuthorID, publishedAd.Data.AuthorID)
 	assert.True(t, ads.Data[0].Published)
 }
+
+func TestGetAd(t *testing.T) {
+	client := getTestClient()
+
+	uResponse, err := client.createUser("J.Cole", "foresthill@drive.com")
+	assert.NoError(t, err)
+
+	response, err := client.createAd(uResponse.Data.ID, "hello", "world")
+	assert.NoError(t, err)
+
+	response, err = client.getAd(response.Data.ID)
+	assert.NoError(t, err)
+	assert.Zero(t, response.Data.ID)
+	assert.Equal(t, response.Data.Title, "hello")
+	assert.Equal(t, response.Data.Text, "world")
+	assert.Equal(t, response.Data.AuthorID, int64(uResponse.Data.ID))
+	assert.False(t, response.Data.Published)
+}

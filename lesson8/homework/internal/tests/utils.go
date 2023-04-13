@@ -113,6 +113,23 @@ func (tc *testClient) createAd(userID int64, title string, text string) (adRespo
 	return response, nil
 }
 
+func (tc *testClient) getAd(adID int64) (adResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d", adID), nil)
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
+	}
+
+	return response, nil
+}
+
 func (tc *testClient) changeAdStatus(userID int64, adID int64, published bool) (adResponse, error) {
 	body := map[string]any{
 		"user_id":   userID,
