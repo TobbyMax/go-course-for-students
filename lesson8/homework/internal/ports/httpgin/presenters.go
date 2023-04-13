@@ -9,12 +9,12 @@ import (
 
 type createUserRequest struct {
 	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
+	Email    string `json:"email" binding:"required,email"`
 }
 
 type updateUserRequest struct {
 	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
+	Email    string `json:"email" binding:"required,email"`
 }
 
 type userResponse struct {
@@ -36,6 +36,7 @@ type adResponse struct {
 	AuthorID    int64     `json:"author_id"`
 	Published   bool      `json:"published"`
 	DateCreated time.Time `json:"date_created"`
+	DateChanged time.Time `json:"date_changed"`
 }
 
 type changeAdStatusRequest struct {
@@ -53,6 +54,7 @@ type listAdsRequest struct {
 	Published *bool      `json:"published"`
 	UserID    *int64     `json:"user_id"`
 	Date      *time.Time `json:"date"`
+	Title     *string    `json:"title"`
 }
 
 type adListResponse []adResponse
@@ -66,6 +68,7 @@ func AdSuccessResponse(ad *ads.Ad) *gin.H {
 			AuthorID:    ad.AuthorID,
 			Published:   ad.Published,
 			DateCreated: ad.DateCreated,
+			DateChanged: ad.DateChanged,
 		},
 		"error": nil,
 	}
@@ -82,6 +85,7 @@ func AdListSuccessResponse(al *ads.AdList) *gin.H {
 				AuthorID:    ad.AuthorID,
 				Published:   ad.Published,
 				DateCreated: ad.DateCreated,
+				DateChanged: ad.DateChanged,
 			})
 	}
 	return &gin.H{

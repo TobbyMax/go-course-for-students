@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
-var ErrForbidden = fmt.Errorf("forbidden")
+var (
+	ErrForbidden    = fmt.Errorf("forbidden")
+	ErrAdNotFound   = fmt.Errorf("ad with such id does not exist")
+	ErrUserNotFound = fmt.Errorf("user with such id does not exist")
+)
 
 type App interface {
 	CreateAd(ctx context.Context, title string, text string, uid int64) (*ads.Ad, error)
@@ -17,26 +21,31 @@ type App interface {
 	UpdateAd(ctx context.Context, id int64, uid int64, title string, text string) (*ads.Ad, error)
 	GetAd(ctx context.Context, id int64) (*ads.Ad, error)
 
-	ListAds(ctx context.Context, published *bool, uid *int64, date *time.Time) (*ads.AdList, error)
-	FindAdsByTitle(ctx context.Context, title string) (*ads.AdList, error)
+	ListAds(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error)
 
 	CreateUser(ctx context.Context, nickname string, email string) (*user.User, error)
 	GetUser(ctx context.Context, id int64) (*user.User, error)
 	UpdateUser(ctx context.Context, id int64, nickname string, email string) (*user.User, error)
 }
 
-type Repository interface {
+type AdRepository interface {
 	AddAd(ctx context.Context, ad ads.Ad) (int64, error)
 	GetAdByID(ctx context.Context, id int64) (*ads.Ad, error)
 	UpdateAdStatus(ctx context.Context, id int64, published bool, date time.Time) error
 	UpdateAdContent(ctx context.Context, id int64, title string, text string, date time.Time) error
 
-	GetAdList(ctx context.Context, published *bool, uid *int64, date *time.Time) (*ads.AdList, error)
-	GetAdsByTitle(ctx context.Context, title string) (*ads.AdList, error)
+	GetAdList(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error)
+}
 
+type UserRepository interface {
 	AddUser(ctx context.Context, u user.User) (int64, error)
 	GetUserByID(ctx context.Context, id int64) (*user.User, error)
 	UpdateUser(ctx context.Context, id int64, nickname string, email string) error
+}
+
+type Repository interface {
+	AdRepository
+	UserRepository
 }
 
 type AdApp struct {
@@ -121,27 +130,18 @@ func (a AdApp) UpdateAd(ctx context.Context, id int64, uid int64, title string, 
 	return ad, nil
 }
 
-func (a AdApp) ListAds(ctx context.Context, published *bool, uid *int64, date *time.Time) (*ads.AdList, error) {
+func (a AdApp) ListAds(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error) {
 	p := true
-	if published == nil && uid == nil && date == nil {
+	if published == nil && uid == nil && date == nil && title == nil {
 		published = &p
 	}
-	al, err := a.repository.GetAdList(ctx, published, uid, date)
+	al, err := a.repository.GetAdList(ctx, published, uid, date, title)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return al, nil
-}
-
-func (a AdApp) FindAdsByTitle(ctx context.Context, name string) (*ads.AdList, error) {
-	ad, err := a.repository.GetAdsByTitle(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-
-	return ad, nil
 }
 
 func (a AdApp) CreateUser(ctx context.Context, nickname string, email string) (*user.User, error) {
