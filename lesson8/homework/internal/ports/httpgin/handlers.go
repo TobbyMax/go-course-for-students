@@ -29,6 +29,8 @@ func createAd(a app.App) gin.HandlerFunc {
 			switch {
 			case errors.As(err, &validator.ValidationErrors{}):
 				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			case errors.Is(err, app.ErrUserNotFound):
+				c.JSON(http.StatusFailedDependency, AdErrorResponse(err))
 			default:
 				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
 			}
@@ -60,6 +62,8 @@ func changeAdStatus(a app.App) gin.HandlerFunc {
 			switch {
 			case errors.Is(err, app.ErrForbidden):
 				c.JSON(http.StatusForbidden, AdErrorResponse(err))
+			case errors.Is(err, app.ErrAdNotFound):
+				c.JSON(http.StatusNotFound, AdErrorResponse(err))
 			default:
 				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
 			}
@@ -93,6 +97,8 @@ func updateAd(a app.App) gin.HandlerFunc {
 				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
 			case errors.Is(err, app.ErrForbidden):
 				c.JSON(http.StatusForbidden, AdErrorResponse(err))
+			case errors.Is(err, app.ErrAdNotFound):
+				c.JSON(http.StatusNotFound, AdErrorResponse(err))
 			default:
 				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
 			}
@@ -115,14 +121,19 @@ func getAd(a app.App) gin.HandlerFunc {
 		ad, err := a.GetAd(c, int64(adID))
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			switch {
+			case errors.Is(err, app.ErrAdNotFound):
+				c.JSON(http.StatusNotFound, AdErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			}
 			return
 		}
 		c.JSON(http.StatusOK, AdSuccessResponse(ad))
 	}
 }
 
-// Метод для получения объявления по id
+// Метод для получения списка объявлений с фильтрами
 func listAds(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var reqBody listAdsRequest
@@ -131,27 +142,16 @@ func listAds(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		al, err := a.ListAds(c, reqBody.Published, reqBody.UserID, reqBody.Date)
+		al, err := a.ListAds(c, reqBody.Published, reqBody.UserID, reqBody.Date, reqBody.Title)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
 			return
 		}
-		c.JSON(http.StatusOK, AdListSuccessResponse(al))
-	}
-}
-
-// Метод для поиска объявлений по имени
-func findAdsByTitle(a app.App) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		title := c.Param("title")
-		
-		al, err := a.FindAdsByTitle(c, title)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-			return
-		}
+		//if len(al.Data) == 0 {
+		//	c.JSON(http.StatusNoContent, AdListSuccessResponse(al))
+		//	return
+		//}
 		c.JSON(http.StatusOK, AdListSuccessResponse(al))
 	}
 }
@@ -181,7 +181,7 @@ func createUser(a app.App) gin.HandlerFunc {
 	}
 }
 
-// Метод для обновления текста(Text) или заголовка(Title) объявления
+// Метод для обновления имени(Nickname) или почты(Email) пользователя
 func updateUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var reqBody updateUserRequest
@@ -203,8 +203,8 @@ func updateUser(a app.App) gin.HandlerFunc {
 			switch {
 			case errors.As(err, &validator.ValidationErrors{}):
 				c.JSON(http.StatusBadRequest, UserErrorResponse(err))
-			case errors.Is(err, app.ErrForbidden):
-				c.JSON(http.StatusForbidden, UserErrorResponse(err))
+			case errors.Is(err, app.ErrUserNotFound):
+				c.JSON(http.StatusNotFound, UserErrorResponse(err))
 			default:
 				c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
 			}
@@ -214,7 +214,7 @@ func updateUser(a app.App) gin.HandlerFunc {
 	}
 }
 
-// Метод для получения объявления по id
+// Метод для получения пользователя по id
 func getUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userIDStr := c.Param("user_id")
@@ -227,7 +227,12 @@ func getUser(a app.App) gin.HandlerFunc {
 		u, err := a.GetUser(c, int64(userID))
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
+			switch {
+			case errors.Is(err, app.ErrUserNotFound):
+				c.JSON(http.StatusNotFound, UserErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
+			}
 			return
 		}
 		c.JSON(http.StatusOK, UserSuccessResponse(u))
