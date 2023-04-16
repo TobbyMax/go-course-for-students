@@ -5,6 +5,7 @@ import (
 	"homework8/internal/ads"
 	"homework8/internal/app"
 	"homework8/internal/user"
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,7 @@ func New() app.Repository {
 type RepositoryMap struct {
 	adTable   map[int64]ads.Ad
 	userTable map[int64]user.User
+	mu        *sync.Mutex
 }
 
 func NewRepositorySlice() *RepositoryMap {
@@ -64,13 +66,13 @@ func (r RepositoryMap) UpdateAdContent(ctx context.Context, id int64, title stri
 	return nil
 }
 
-func (r RepositoryMap) GetAdList(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error) {
+func (r RepositoryMap) GetAdList(ctx context.Context, params app.ListAdsParams) (*ads.AdList, error) {
 	al := ads.AdList{Data: make([]ads.Ad, 0)}
 	for _, ad := range r.adTable {
-		if published == nil || *published == ad.Published {
-			if (uid == nil || *uid == ad.AuthorID) && (title == nil || *title == ad.Title) {
-				if year, month, day := ad.DateCreated.Date(); date == nil ||
-					(date.Year() == year && date.Month() == month && date.Day() == day) {
+		if params.Published == nil || *params.Published == ad.Published {
+			if (params.Uid == nil || *params.Uid == ad.AuthorID) && (params.Title == nil || *params.Title == ad.Title) {
+				if year, month, day := ad.DateCreated.Date(); params.Date == nil ||
+					(params.Date.Year() == year && params.Date.Month() == month && params.Date.Day() == day) {
 					al.Data = append(al.Data, ad)
 				}
 			}

@@ -21,7 +21,7 @@ type App interface {
 	UpdateAd(ctx context.Context, id int64, uid int64, title string, text string) (*ads.Ad, error)
 	GetAd(ctx context.Context, id int64) (*ads.Ad, error)
 
-	ListAds(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error)
+	ListAds(ctx context.Context, params ListAdsParams) (*ads.AdList, error)
 
 	CreateUser(ctx context.Context, nickname string, email string) (*user.User, error)
 	GetUser(ctx context.Context, id int64) (*user.User, error)
@@ -34,7 +34,7 @@ type AdRepository interface {
 	UpdateAdStatus(ctx context.Context, id int64, published bool, date time.Time) error
 	UpdateAdContent(ctx context.Context, id int64, title string, text string, date time.Time) error
 
-	GetAdList(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error)
+	GetAdList(ctx context.Context, params ListAdsParams) (*ads.AdList, error)
 }
 
 type UserRepository interface {
@@ -61,7 +61,7 @@ func NewAdApp(repo Repository) *AdApp {
 }
 
 func (a AdApp) CreateAd(ctx context.Context, title string, text string, uid int64) (*ads.Ad, error) {
-	ad := ads.Ad{Title: title, Text: text, AuthorID: uid, Published: false, DateCreated: time.Now()}
+	ad := ads.Ad{Title: title, Text: text, AuthorID: uid, Published: false, DateCreated: time.Now().UTC()}
 	ad.DateChanged = ad.DateCreated
 	if err := validator.Validate(ad); err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (a AdApp) ChangeAdStatus(ctx context.Context, id int64, uid int64, publishe
 	}
 
 	ad.Published = published
-	ad.DateChanged = time.Now()
+	ad.DateChanged = time.Now().UTC()
 
 	err = a.repository.UpdateAdStatus(ctx, id, published, ad.DateChanged)
 	if err != nil {
@@ -116,7 +116,7 @@ func (a AdApp) UpdateAd(ctx context.Context, id int64, uid int64, title string, 
 
 	ad.Title = title
 	ad.Text = text
-	ad.DateChanged = time.Now()
+	ad.DateChanged = time.Now().UTC()
 
 	if err := validator.Validate(*ad); err != nil {
 		return nil, err
@@ -130,12 +130,12 @@ func (a AdApp) UpdateAd(ctx context.Context, id int64, uid int64, title string, 
 	return ad, nil
 }
 
-func (a AdApp) ListAds(ctx context.Context, published *bool, uid *int64, date *time.Time, title *string) (*ads.AdList, error) {
+func (a AdApp) ListAds(ctx context.Context, params ListAdsParams) (*ads.AdList, error) {
 	p := true
-	if published == nil && uid == nil && date == nil && title == nil {
-		published = &p
+	if params.Published == nil && params.Uid == nil && params.Date == nil && params.Title == nil {
+		params.Published = &p
 	}
-	al, err := a.repository.GetAdList(ctx, published, uid, date, title)
+	al, err := a.repository.GetAdList(ctx, params)
 
 	if err != nil {
 		return nil, err
