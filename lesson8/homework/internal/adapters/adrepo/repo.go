@@ -5,6 +5,7 @@ import (
 	"homework8/internal/ads"
 	"homework8/internal/app"
 	"homework8/internal/user"
+	"sync"
 	"time"
 )
 
@@ -13,6 +14,7 @@ func New() app.Repository {
 }
 
 type RepositoryMap struct {
+	sync.RWMutex
 	adTable   map[int64]ads.Ad
 	userTable map[int64]user.User
 }
@@ -24,7 +26,9 @@ func NewRepositorySlice() *RepositoryMap {
 	}
 }
 
-func (r RepositoryMap) AddAd(ctx context.Context, ad ads.Ad) (int64, error) {
+func (r *RepositoryMap) AddAd(ctx context.Context, ad ads.Ad) (int64, error) {
+	r.Lock()
+	defer r.Unlock()
 	if _, ok := r.userTable[ad.AuthorID]; !ok {
 		return 0, app.ErrUserNotFound
 	}
@@ -33,7 +37,9 @@ func (r RepositoryMap) AddAd(ctx context.Context, ad ads.Ad) (int64, error) {
 	return ad.ID, nil
 }
 
-func (r RepositoryMap) GetAdByID(ctx context.Context, id int64) (*ads.Ad, error) {
+func (r *RepositoryMap) GetAdByID(ctx context.Context, id int64) (*ads.Ad, error) {
+	r.Lock()
+	defer r.Unlock()
 	if ad, ok := r.adTable[id]; !ok {
 		return nil, app.ErrAdNotFound
 	} else {
@@ -41,7 +47,9 @@ func (r RepositoryMap) GetAdByID(ctx context.Context, id int64) (*ads.Ad, error)
 	}
 }
 
-func (r RepositoryMap) UpdateAdStatus(ctx context.Context, id int64, published bool, date time.Time) error {
+func (r *RepositoryMap) UpdateAdStatus(ctx context.Context, id int64, published bool, date time.Time) error {
+	r.Lock()
+	defer r.Unlock()
 	if _, ok := r.adTable[id]; !ok {
 		return app.ErrAdNotFound
 	}
@@ -52,7 +60,9 @@ func (r RepositoryMap) UpdateAdStatus(ctx context.Context, id int64, published b
 	return nil
 }
 
-func (r RepositoryMap) UpdateAdContent(ctx context.Context, id int64, title string, text string, date time.Time) error {
+func (r *RepositoryMap) UpdateAdContent(ctx context.Context, id int64, title string, text string, date time.Time) error {
+	r.Lock()
+	defer r.Unlock()
 	if _, ok := r.adTable[id]; !ok {
 		return app.ErrAdNotFound
 	}
@@ -64,7 +74,9 @@ func (r RepositoryMap) UpdateAdContent(ctx context.Context, id int64, title stri
 	return nil
 }
 
-func (r RepositoryMap) GetAdList(ctx context.Context, params app.ListAdsParams) (*ads.AdList, error) {
+func (r *RepositoryMap) GetAdList(ctx context.Context, params app.ListAdsParams) (*ads.AdList, error) {
+	r.Lock()
+	defer r.Unlock()
 	al := ads.AdList{Data: make([]ads.Ad, 0)}
 	for _, ad := range r.adTable {
 		if params.Published == nil || *params.Published == ad.Published {
@@ -79,13 +91,17 @@ func (r RepositoryMap) GetAdList(ctx context.Context, params app.ListAdsParams) 
 	return &al, nil
 }
 
-func (r RepositoryMap) AddUser(ctx context.Context, u user.User) (int64, error) {
+func (r *RepositoryMap) AddUser(ctx context.Context, u user.User) (int64, error) {
+	r.Lock()
+	defer r.Unlock()
 	u.ID = int64(len(r.userTable))
 	r.userTable[u.ID] = u
 	return u.ID, nil
 }
 
-func (r RepositoryMap) GetUserByID(ctx context.Context, id int64) (*user.User, error) {
+func (r *RepositoryMap) GetUserByID(ctx context.Context, id int64) (*user.User, error) {
+	r.Lock()
+	defer r.Unlock()
 	if u, ok := r.userTable[id]; !ok {
 		return nil, app.ErrUserNotFound
 	} else {
@@ -93,7 +109,9 @@ func (r RepositoryMap) GetUserByID(ctx context.Context, id int64) (*user.User, e
 	}
 }
 
-func (r RepositoryMap) UpdateUser(ctx context.Context, id int64, nickname string, email string) error {
+func (r *RepositoryMap) UpdateUser(ctx context.Context, id int64, nickname string, email string) error {
+	r.Lock()
+	defer r.Unlock()
 	if _, ok := r.userTable[id]; !ok {
 		return app.ErrUserNotFound
 	}
