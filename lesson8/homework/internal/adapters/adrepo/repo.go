@@ -5,7 +5,6 @@ import (
 	"homework8/internal/ads"
 	"homework8/internal/app"
 	"homework8/internal/user"
-	"sync"
 	"time"
 )
 
