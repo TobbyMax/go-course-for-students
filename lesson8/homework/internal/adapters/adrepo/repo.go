@@ -5,7 +5,6 @@ import (
 	"homework8/internal/ads"
 	"homework8/internal/app"
 	"homework8/internal/user"
-	"sync"
 	"time"
 )
 
@@ -16,7 +15,6 @@ func New() app.Repository {
 type RepositoryMap struct {
 	adTable   map[int64]ads.Ad
 	userTable map[int64]user.User
-	mu        *sync.Mutex
 }
 
 func NewRepositorySlice() *RepositoryMap {
