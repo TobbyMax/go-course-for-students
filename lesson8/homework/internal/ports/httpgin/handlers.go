@@ -142,7 +142,12 @@ func listAds(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		al, err := a.ListAds(c, reqBody.Published, reqBody.UserID, reqBody.Date, reqBody.Title)
+		al, err := a.ListAds(c, app.ListAdsParams{
+			Published: reqBody.Published,
+			Uid:       reqBody.UserID,
+			Date:      reqBody.Date,
+			Title:     reqBody.Title,
+		})
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
