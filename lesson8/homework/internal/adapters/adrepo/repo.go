@@ -14,7 +14,7 @@ func New() app.Repository {
 }
 
 type RepositoryMap struct {
-	sync.RWMutex
+	sync.Mutex
 	adTable   map[int64]ads.Ad
 	userTable map[int64]user.User
 }
