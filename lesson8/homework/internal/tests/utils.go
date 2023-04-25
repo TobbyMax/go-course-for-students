@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"homework8/internal/adapters/adrepo"
 	"homework8/internal/app"
@@ -14,11 +15,13 @@ import (
 )
 
 type adData struct {
-	ID        int64  `json:"id"`
-	Title     string `json:"title"`
-	Text      string `json:"text"`
-	AuthorID  int64  `json:"author_id"`
-	Published bool   `json:"published"`
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Text        string    `json:"text"`
+	AuthorID    int64     `json:"author_id"`
+	Published   bool      `json:"published"`
+	DateCreated time.Time `json:"date_created"`
+	DateChanged time.Time `json:"date_changed"`
 }
 
 type adResponse struct {
@@ -32,6 +35,7 @@ type adsResponse struct {
 var (
 	ErrBadRequest = fmt.Errorf("bad request")
 	ErrForbidden  = fmt.Errorf("forbidden")
+	ErrNotFound   = fmt.Errorf("not found")
 )
 
 type testClient struct {
@@ -62,6 +66,9 @@ func (tc *testClient) getResponse(req *http.Request, out any) error {
 		if resp.StatusCode == http.StatusForbidden {
 			return ErrForbidden
 		}
+		if resp.StatusCode == http.StatusNotFound {
+			return ErrNotFound
+		}
 		return fmt.Errorf("unexpected status code: %s", resp.Status)
 	}
 
@@ -91,6 +98,23 @@ func (tc *testClient) createAd(userID int64, title string, text string) (adRespo
 	}
 
 	req, err := http.NewRequest(http.MethodPost, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) getAd(adID int64) (adResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d", adID), nil)
 	if err != nil {
 		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -166,6 +190,166 @@ func (tc *testClient) listAds() (adsResponse, error) {
 	if err != nil {
 		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) listAdsByStatus(published bool) (adsResponse, error) {
+	body := map[string]any{
+		"published": published,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) listAdsByUser(userID int64) (adsResponse, error) {
+	body := map[string]any{
+		"user_id": userID,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) listAdsByDate(date time.Time) (adsResponse, error) {
+	body := map[string]any{
+		"date": date,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) listAdsByUserAndDate(userID int64, date time.Time) (adsResponse, error) {
+	body := map[string]any{
+		"user_id": userID,
+		"date":    date,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) listAdsByOptions(userID int64, date time.Time, published bool, title string) (adsResponse, error) {
+	body := map[string]any{
+		"user_id":   userID,
+		"date":      date,
+		"published": published,
+		"title":     title,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adsResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) listAdsByTitle(title string) (adsResponse, error) {
+	body := map[string]any{
+		"title": title,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
 
 	var response adsResponse
 	err = tc.getResponse(req, &response)
