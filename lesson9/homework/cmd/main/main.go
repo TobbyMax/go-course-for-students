@@ -25,7 +25,7 @@ func main() {
 	}
 
 	svc := grpcSvc.NewService(appSvc)
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(grpcSvc.LoggerInterceptor))
 	grpcSvc.RegisterAdServiceServer(grpcServer, svc)
 
 	server := httpgin.NewHTTPServer(httpPort, appSvc)
@@ -36,7 +36,7 @@ func main() {
 		defer wg.Done()
 		err = server.ListenAndServe()
 		if err != nil {
-			panic(err)
+			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 	go func() {
