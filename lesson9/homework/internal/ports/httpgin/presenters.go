@@ -118,3 +118,10 @@ func UserErrorResponse(err error) *gin.H {
 		"error": err.Error(),
 	}
 }
+
+func DeletionSuccessResponse() *gin.H {
+	return &gin.H{
+		"data":  nil,
+		"error": nil,
+	}
+}
