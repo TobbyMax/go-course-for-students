@@ -10,6 +10,8 @@ import (
 	"strconv"
 )
 
+var ErrParameterNotFound = errors.New("necessary parameters not provided")
+
 type Handler = func(*gin.Context) error
 
 // Метод для создания объявления (ad)
@@ -132,6 +134,45 @@ func getAd(a app.App) gin.HandlerFunc {
 	}
 }
 
+// Метод для получения объявления по id
+func deleteAd(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		adIDStr, ok := c.GetQuery("id")
+		if !ok {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(ErrParameterNotFound))
+			return
+		}
+		adID, err := strconv.Atoi(adIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+		userIDStr, ok := c.GetQuery("user_id")
+		if !ok {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(ErrParameterNotFound))
+			return
+		}
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
+
+		err = a.DeleteAd(c, int64(adID), int64(userID))
+
+		if err != nil {
+			switch {
+			case errors.Is(err, app.ErrAdNotFound):
+				c.JSON(http.StatusNotFound, AdErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, nil)
+	}
+}
+
 // Метод для получения списка объявлений с фильтрами
 func listAds(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -240,5 +281,30 @@ func getUser(a app.App) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, UserSuccessResponse(u))
+	}
+}
+
+// Метод для удаления пользователя по id
+func deleteUser(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userIDStr := c.Param("user_id")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, UserErrorResponse(err))
+			return
+		}
+
+		err = a.DeleteUser(c, int64(userID))
+
+		if err != nil {
+			switch {
+			case errors.Is(err, app.ErrUserNotFound):
+				c.JSON(http.StatusNotFound, UserErrorResponse(err))
+			default:
+				c.JSON(http.StatusInternalServerError, UserErrorResponse(err))
+			}
+			return
+		}
+		c.JSON(http.StatusOK, nil)
 	}
 }
