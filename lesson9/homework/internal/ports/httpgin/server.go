@@ -10,17 +10,17 @@ import (
 	"homework9/internal/app"
 )
 
-func LogMiddleWare(c *gin.Context) {
-	t := time.Now()
+func LoggerMiddleWare(c *gin.Context) {
+	start := time.Now()
 
-	log.Printf("-- received request -- | method: %s | path: %s\n", c.Request.Method, c.Request.URL.Path)
+	log.Printf("-- received request -- | protocol: HTTP | method: %s | path: %s\n", c.Request.Method, c.Request.URL.Path)
 
 	c.Next()
 
-	latency := time.Since(t)
+	latency := time.Since(start)
 	status := c.Writer.Status()
 
-	log.Printf("-- handled request -- | status: %d | latency: %+v | method: %s | path: %s\n", status, latency, c.Request.Method, c.Request.URL.Path)
+	log.Printf("-- handled request -- | protocol: HTTP | status: %d | latency: %+v | method: %s | path: %s\n", status, latency, c.Request.Method, c.Request.URL.Path)
 }
 
 func NewHTTPServer(port string, a app.App) *http.Server {
@@ -36,7 +36,7 @@ func NewHTTPServer(port string, a app.App) *http.Server {
 	api.Use(gin.Logger())
 	api.Use(gin.Recovery())
 
-	api.Use(LogMiddleWare)
+	api.Use(LoggerMiddleWare)
 
 	AppRouter(api, a)
 	return s
