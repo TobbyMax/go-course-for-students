@@ -23,6 +23,7 @@ const (
 	AdService_CreateAd_FullMethodName       = "/ad.AdService/CreateAd"
 	AdService_ChangeAdStatus_FullMethodName = "/ad.AdService/ChangeAdStatus"
 	AdService_UpdateAd_FullMethodName       = "/ad.AdService/UpdateAd"
+	AdService_GetAd_FullMethodName          = "/ad.AdService/GetAd"
 	AdService_ListAds_FullMethodName        = "/ad.AdService/ListAds"
 	AdService_CreateUser_FullMethodName     = "/ad.AdService/CreateUser"
 	AdService_GetUser_FullMethodName        = "/ad.AdService/GetUser"
@@ -37,7 +38,8 @@ type AdServiceClient interface {
 	CreateAd(ctx context.Context, in *CreateAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	ChangeAdStatus(ctx context.Context, in *ChangeAdStatusRequest, opts ...grpc.CallOption) (*AdResponse, error)
 	UpdateAd(ctx context.Context, in *UpdateAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
-	ListAds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdResponse, error)
+	GetAd(ctx context.Context, in *GetAdRequest, opts ...grpc.CallOption) (*AdResponse, error)
+	ListAds(ctx context.Context, in *ListAdRequest, opts ...grpc.CallOption) (*ListAdResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -79,7 +81,16 @@ func (c *adServiceClient) UpdateAd(ctx context.Context, in *UpdateAdRequest, opt
 	return out, nil
 }
 
-func (c *adServiceClient) ListAds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdResponse, error) {
+func (c *adServiceClient) GetAd(ctx context.Context, in *GetAdRequest, opts ...grpc.CallOption) (*AdResponse, error) {
+	out := new(AdResponse)
+	err := c.cc.Invoke(ctx, AdService_GetAd_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adServiceClient) ListAds(ctx context.Context, in *ListAdRequest, opts ...grpc.CallOption) (*ListAdResponse, error) {
 	out := new(ListAdResponse)
 	err := c.cc.Invoke(ctx, AdService_ListAds_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -131,7 +142,8 @@ type AdServiceServer interface {
 	CreateAd(context.Context, *CreateAdRequest) (*AdResponse, error)
 	ChangeAdStatus(context.Context, *ChangeAdStatusRequest) (*AdResponse, error)
 	UpdateAd(context.Context, *UpdateAdRequest) (*AdResponse, error)
-	ListAds(context.Context, *emptypb.Empty) (*ListAdResponse, error)
+	GetAd(context.Context, *GetAdRequest) (*AdResponse, error)
+	ListAds(context.Context, *ListAdRequest) (*ListAdResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*UserResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*UserResponse, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
@@ -151,7 +163,10 @@ func (UnimplementedAdServiceServer) ChangeAdStatus(context.Context, *ChangeAdSta
 func (UnimplementedAdServiceServer) UpdateAd(context.Context, *UpdateAdRequest) (*AdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAd not implemented")
 }
-func (UnimplementedAdServiceServer) ListAds(context.Context, *emptypb.Empty) (*ListAdResponse, error) {
+func (UnimplementedAdServiceServer) GetAd(context.Context, *GetAdRequest) (*AdResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAd not implemented")
+}
+func (UnimplementedAdServiceServer) ListAds(context.Context, *ListAdRequest) (*ListAdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAds not implemented")
 }
 func (UnimplementedAdServiceServer) CreateUser(context.Context, *CreateUserRequest) (*UserResponse, error) {
@@ -232,8 +247,26 @@ func _AdService_UpdateAd_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdService_GetAd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdServiceServer).GetAd(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdService_GetAd_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdServiceServer).GetAd(ctx, req.(*GetAdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdService_ListAds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ListAdRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -245,7 +278,7 @@ func _AdService_ListAds_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: AdService_ListAds_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdServiceServer).ListAds(ctx, req.(*emptypb.Empty))
+		return srv.(AdServiceServer).ListAds(ctx, req.(*ListAdRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -340,6 +373,10 @@ var AdService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateAd",
 			Handler:    _AdService_UpdateAd_Handler,
+		},
+		{
+			MethodName: "GetAd",
+			Handler:    _AdService_GetAd_Handler,
 		},
 		{
 			MethodName: "ListAds",
