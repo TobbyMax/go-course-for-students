@@ -10,11 +10,6 @@ import (
 	"homework9/internal/app"
 )
 
-type Server struct {
-	port string
-	app  *gin.Engine
-}
-
 func LogMiddleWare(c *gin.Context) {
 	t := time.Now()
 
@@ -28,12 +23,14 @@ func LogMiddleWare(c *gin.Context) {
 	log.Printf("-- handled request -- | status: %d | latency: %+v | method: %s | path: %s\n", status, latency, c.Request.Method, c.Request.URL.Path)
 }
 
-func NewHTTPServer(port string, a app.App) Server {
+func NewHTTPServer(port string, a app.App) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
-	s := Server{port: port, app: gin.New()}
+	handler := gin.New()
+	s := &http.Server{Addr: port, Handler: handler}
 
 	// todo: add your own logic
-	api := s.app.Group("/api/v1")
+
+	api := handler.Group("/api/v1")
 
 	// MiddleWare для логирования и паник
 	api.Use(gin.Logger())
@@ -43,12 +40,4 @@ func NewHTTPServer(port string, a app.App) Server {
 
 	AppRouter(api, a)
 	return s
-}
-
-func (s *Server) Listen() error {
-	return s.app.Run(s.port)
-}
-
-func (s *Server) Handler() http.Handler {
-	return s.app
 }

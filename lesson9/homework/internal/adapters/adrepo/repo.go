@@ -17,12 +17,14 @@ type RepositoryMap struct {
 	sync.Mutex
 	adTable   map[int64]ads.Ad
 	userTable map[int64]user.User
+	user2ads  map[int64]map[int64]struct{}
 }
 
 func NewRepositoryMap() *RepositoryMap {
 	return &RepositoryMap{
 		adTable:   make(map[int64]ads.Ad),
 		userTable: make(map[int64]user.User),
+		user2ads:  make(map[int64]map[int64]struct{}),
 	}
 }
 
@@ -34,6 +36,7 @@ func (r *RepositoryMap) AddAd(ctx context.Context, ad ads.Ad) (int64, error) {
 	}
 	ad.ID = int64(len(r.adTable))
 	r.adTable[ad.ID] = ad
+	r.user2ads[ad.AuthorID][ad.ID] = struct{}{}
 	return ad.ID, nil
 }
 
@@ -96,6 +99,7 @@ func (r *RepositoryMap) AddUser(ctx context.Context, u user.User) (int64, error)
 	defer r.Unlock()
 	u.ID = int64(len(r.userTable))
 	r.userTable[u.ID] = u
+	r.user2ads[u.ID] = make(map[int64]struct{})
 	return u.ID, nil
 }
 
@@ -128,8 +132,8 @@ func (r *RepositoryMap) DeleteAd(ctx context.Context, id int64, uid int64) error
 	if _, ok := r.adTable[id]; !ok {
 		return app.ErrAdNotFound
 	}
-	if r.adTable[id].AuthorID == uid {
-		return app.ErrUserNotFound
+	if r.adTable[id].AuthorID != uid {
+		return app.ErrForbidden
 	}
 	delete(r.adTable, id)
 	return nil
@@ -141,6 +145,10 @@ func (r *RepositoryMap) DeleteUserByID(ctx context.Context, id int64) error {
 	if _, ok := r.userTable[id]; !ok {
 		return app.ErrUserNotFound
 	}
+	for adID := range r.user2ads[id] {
+		delete(r.adTable, adID)
+	}
+	delete(r.user2ads, id)
 	delete(r.userTable, id)
 	return nil
 }

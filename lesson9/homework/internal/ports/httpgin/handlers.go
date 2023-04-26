@@ -137,11 +137,7 @@ func getAd(a app.App) gin.HandlerFunc {
 // Метод для получения объявления по id
 func deleteAd(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		adIDStr, ok := c.GetQuery("id")
-		if !ok {
-			c.JSON(http.StatusBadRequest, AdErrorResponse(ErrParameterNotFound))
-			return
-		}
+		adIDStr := c.Param("ad_id")
 		adID, err := strconv.Atoi(adIDStr)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
@@ -169,7 +165,7 @@ func deleteAd(a app.App) gin.HandlerFunc {
 			}
 			return
 		}
-		c.JSON(http.StatusOK, nil)
+		c.JSON(http.StatusOK, DeletionSuccessResponse())
 	}
 }
 
@@ -305,6 +301,6 @@ func deleteUser(a app.App) gin.HandlerFunc {
 			}
 			return
 		}
-		c.JSON(http.StatusOK, nil)
+		c.JSON(http.StatusOK, DeletionSuccessResponse())
 	}
 }
