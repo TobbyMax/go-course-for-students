@@ -126,14 +126,11 @@ func (r *RepositoryMap) UpdateUser(ctx context.Context, id int64, nickname strin
 	return nil
 }
 
-func (r *RepositoryMap) DeleteAd(ctx context.Context, id int64, uid int64) error {
+func (r *RepositoryMap) DeleteAdByID(ctx context.Context, id int64) error {
 	r.Lock()
 	defer r.Unlock()
 	if _, ok := r.adTable[id]; !ok {
 		return app.ErrAdNotFound
-	}
-	if r.adTable[id].AuthorID != uid {
-		return app.ErrForbidden
 	}
 	delete(r.adTable, id)
 	return nil

@@ -87,3 +87,20 @@ func (tc *testClient) updateUser(userID int64, nickname string, email string) (u
 
 	return response, nil
 }
+
+func (tc *testClient) deleteUser(userID int64) (userResponse, error) {
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), nil)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response userResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return userResponse{}, err
+	}
+
+	return response, nil
+}

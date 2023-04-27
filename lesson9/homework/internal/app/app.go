@@ -42,7 +42,7 @@ type AdRepository interface {
 	GetAdByID(ctx context.Context, id int64) (*ads.Ad, error)
 	UpdateAdStatus(ctx context.Context, id int64, published bool, date time.Time) error
 	UpdateAdContent(ctx context.Context, id int64, title string, text string, date time.Time) error
-	DeleteAd(ctx context.Context, id int64, uid int64) error
+	DeleteAdByID(ctx context.Context, id int64) error
 
 	GetAdList(ctx context.Context, params ListAdsParams) (*ads.AdList, error)
 }
@@ -202,7 +202,14 @@ func (a Application) UpdateUser(ctx context.Context, id int64, nickname string, 
 }
 
 func (a Application) DeleteAd(ctx context.Context, id int64, uid int64) error {
-	err := a.repository.DeleteAd(ctx, id, uid)
+	ad, err := a.repository.GetAdByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ad.AuthorID != uid {
+		return ErrForbidden
+	}
+	err = a.repository.DeleteAdByID(ctx, id)
 	if err != nil {
 		return err
 	}

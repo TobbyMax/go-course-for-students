@@ -13,6 +13,67 @@ import (
 	"time"
 )
 
+func TestGRPCListAds(t *testing.T) {
+	lis := bufconn.Listen(1024 * 1024)
+	t.Cleanup(func() {
+		lis.Close()
+	})
+
+	srv := grpc.NewServer()
+	t.Cleanup(func() {
+		srv.Stop()
+	})
+
+	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
+	grpcPort.RegisterAdServiceServer(srv, svc)
+
+	go func() {
+		assert.NoError(t, srv.Serve(lis), "srv.Serve")
+	}()
+
+	dialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Cleanup(func() {
+		cancel()
+	})
+
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	assert.NoError(t, err, "grpc.DialContext")
+
+	t.Cleanup(func() {
+		conn.Close()
+	})
+
+	client := grpcPort.NewAdServiceClient(conn)
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	assert.NoError(t, err)
+
+	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
+	assert.NoError(t, err)
+
+	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	assert.NoError(t, err)
+
+	publishedAd, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: ad1.Id, UserId: user1.Id, Published: true})
+	assert.NoError(t, err)
+
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Cole World"})
+	assert.NoError(t, err)
+
+	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{})
+
+	assert.NoError(t, err)
+	assert.Len(t, ads.List, 1)
+	assert.Equal(t, ads.List[0].Id, publishedAd.Id)
+	assert.Equal(t, ads.List[0].Title, publishedAd.Title)
+	assert.Equal(t, ads.List[0].Text, publishedAd.Text)
+	assert.Equal(t, ads.List[0].AuthorId, publishedAd.AuthorId)
+	assert.True(t, ads.List[0].Published)
+}
+
 func TestGRPCListAdsPublished(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	t.Cleanup(func() {

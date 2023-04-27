@@ -160,6 +160,8 @@ func deleteAd(a app.App) gin.HandlerFunc {
 			switch {
 			case errors.Is(err, app.ErrAdNotFound):
 				c.JSON(http.StatusNotFound, AdErrorResponse(err))
+			case errors.Is(err, app.ErrForbidden):
+				c.JSON(http.StatusForbidden, AdErrorResponse(err))
 			default:
 				c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
 			}
