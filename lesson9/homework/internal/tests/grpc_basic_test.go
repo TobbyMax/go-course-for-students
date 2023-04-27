@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"testing"
 	"time"
@@ -41,7 +42,8 @@ func TestGRRPCCreateUser(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -83,7 +85,8 @@ func TestGRRPCGetUser(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -129,7 +132,8 @@ func TestGRRPCDeleteUser(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -176,7 +180,8 @@ func TestGRRPCUpdateUser(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -220,7 +225,8 @@ func TestGRRPCCreateAd(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -267,7 +273,8 @@ func TestGRRPCChangeAdStatus(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -318,7 +325,8 @@ func TestGRRPCUpdateAd(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -369,7 +377,8 @@ func TestGRRPCGetAd(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
@@ -421,7 +430,8 @@ func TestGRRPCDeleteAd(t *testing.T) {
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
