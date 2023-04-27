@@ -9,11 +9,12 @@ service AdService {
   rpc ChangeAdStatus(ChangeAdStatusRequest) returns (AdResponse) {}
   rpc UpdateAd(UpdateAdRequest) returns (AdResponse) {}
   rpc GetAd(GetAdRequest) returns (AdResponse) {}
+  rpc DeleteAd(DeleteAdRequest) returns (google.protobuf.Empty) {}
   rpc ListAds(ListAdRequest) returns (ListAdResponse) {}
   rpc CreateUser(CreateUserRequest) returns (UserResponse) {}
+  rpc UpdateUser(UpdateUserRequest) returns (UserResponse) {}
   rpc GetUser(GetUserRequest) returns (UserResponse) {}
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty) {}
-  rpc DeleteAd(DeleteAdRequest) returns (google.protobuf.Empty) {}
 }
 
 message CreateAdRequest {
@@ -82,4 +83,10 @@ message ListAdRequest {
   optional int64 user_id = 2;
   optional string date = 3;
   optional string title = 4;
+}
+
+message UpdateUserRequest {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
 }
