@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 	"homework9/internal/app"
 	"log"
+	"net"
 	"runtime/debug"
 	"time"
 )
@@ -48,4 +49,33 @@ func UnaryRecoveryInterceptor() grpc.UnaryServerInterceptor {
 		},
 	)
 	return grpcRecovery.UnaryServerInterceptor(stackTraceLogger)
+}
+
+func RunGRPCServerGracefully(ctx context.Context, lis net.Listener, server *grpc.Server) func() error {
+	return func() error {
+		log.Printf("starting grpc server, listening on %s\n", lis.Addr())
+		defer log.Printf("close grpc server listening on %s\n", lis.Addr())
+
+		errCh := make(chan error)
+
+		defer func() {
+			server.GracefulStop()
+			_ = lis.Close()
+
+			close(errCh)
+		}()
+
+		go func() {
+			if err := server.Serve(lis); err != nil {
+				errCh <- err
+			}
+		}()
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case err := <-errCh:
+			return fmt.Errorf("grpc server can't listen and serve requests: %w", err)
+		}
+	}
 }
