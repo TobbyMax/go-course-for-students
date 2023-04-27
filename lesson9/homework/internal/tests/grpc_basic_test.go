@@ -91,10 +91,11 @@ func TestGRRPCGetUser(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err = client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
+	res, err := client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
+	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), res.Id)
 	assert.Equal(t, "Oleg", res.Name)
@@ -277,10 +278,10 @@ func TestGRRPCChangeAdStatus(t *testing.T) {
 	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
 	assert.NoError(t, err)
 
-	res, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: 0, UserId: 0, Published: true})
+	res, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: 0, UserId: 0, Published: true})
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), res.Id)
@@ -328,10 +329,10 @@ func TestGRRPCUpdateAd(t *testing.T) {
 	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
 	assert.NoError(t, err)
 
-	res, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: 0, UserId: 0, Title: "Corny", Text: "Low Key"})
+	res, err := client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: 0, UserId: 0, Title: "Corny", Text: "Low Key"})
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), res.Id)
@@ -379,12 +380,12 @@ func TestGRRPCGetAd(t *testing.T) {
 	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
 	assert.NoError(t, err)
 
-	res, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: 0, UserId: 0, Title: "Corny", Text: "Low Key"})
+	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: 0, UserId: 0, Title: "Corny", Text: "Low Key"})
 	assert.NoError(t, err)
-	res, err = client.GetAd(ctx, &grpcPort.GetAdRequest{AdId: 0})
+	res, err := client.GetAd(ctx, &grpcPort.GetAdRequest{AdId: 0})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), res.Id)
 	assert.Equal(t, "Corny", res.Title)
