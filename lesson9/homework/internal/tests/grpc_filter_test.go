@@ -56,13 +56,13 @@ func TestGRPCListAds(t *testing.T) {
 	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	publishedAd, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: ad1.Id, UserId: user1.Id, Published: true})
+	publishedAd, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &ad1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
 	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{})
@@ -118,13 +118,13 @@ func TestGRPCListAdsPublished(t *testing.T) {
 	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	publishedAd, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: ad1.Id, UserId: user1.Id, Published: true})
+	publishedAd, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &ad1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
 	published := true
@@ -181,13 +181,13 @@ func TestGRPCListAdsNotPublished(t *testing.T) {
 	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	ad1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: ad1.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &ad1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	notPublishedAd, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Cole World"})
+	notPublishedAd, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
 	published := false
@@ -244,19 +244,19 @@ func TestGRPCListAdsByUser(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser1.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "GOMD", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
 	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{UserId: &user1.Id})
@@ -312,22 +312,22 @@ func TestGRPCListAdsByDate(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser1.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "GOMD", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	today := time.Now().Format(DateLayout)
+	today := time.Now().UTC().Format(DateLayout)
 	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{Date: &today})
 	assert.NoError(t, err)
 
@@ -376,22 +376,22 @@ func TestGRPCListAdsByDate_Yesterday(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser1.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "GOMD", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	yesterday := time.Now().Add(time.Duration(-24) * time.Hour).Format(DateLayout)
+	yesterday := time.Now().UTC().Add(time.Duration(-24) * time.Hour).Format(DateLayout)
 	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{Date: &yesterday})
 	assert.NoError(t, err)
 
@@ -440,22 +440,22 @@ func TestGRPCListAdsByUserAndDate(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser1.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "GOMD", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	today := time.Now().Format(DateLayout)
+	today := time.Now().UTC().Format(DateLayout)
 	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{Date: &today, UserId: &user2.Id})
 	assert.NoError(t, err)
 
@@ -504,19 +504,19 @@ func TestGRPCListAdsByTitle(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	gomd, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	gomd, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: gomd.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &gomd.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Fire Squad", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Fire Squad", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
 	title := "GOMD"
@@ -573,19 +573,19 @@ func TestGRPCListAdsByTitle_Multiple(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser1.Id, UserId: user1.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "GOMD", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
 	title := "GOMD"
@@ -637,25 +637,25 @@ func TestGRPCListAdsByOptions(t *testing.T) {
 	user2, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Kendrick", Email: "section80@damn.com"})
 	assert.NoError(t, err)
 
-	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	adByUser1, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	target, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser1.Id, UserId: user1.Id, Published: true})
+	target, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser1.Id, UserId: &user1.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user1.Id, Title: "GOMD", Text: "Role Modelz"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user1.Id, Title: "GOMD", Text: "Role Modelz"})
 	assert.NoError(t, err)
 
-	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "GOMD", Text: "Cole World"})
+	adByUser2, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "GOMD", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: adByUser2.Id, UserId: user2.Id, Published: true})
+	_, err = client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &adByUser2.Id, UserId: &user2.Id, Published: true})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: user2.Id, Title: "Born Sinner", Text: "Cole World"})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{UserId: &user2.Id, Title: "Born Sinner", Text: "Cole World"})
 	assert.NoError(t, err)
 
-	today := time.Now().Format(DateLayout)
+	today := time.Now().UTC().Format(DateLayout)
 	published := true
 	ads, err := client.ListAds(ctx, &grpcPort.ListAdRequest{UserId: &user1.Id, Date: &today, Title: &target.Title, Published: &published})
 	assert.NoError(t, err)

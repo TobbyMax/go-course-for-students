@@ -9,6 +9,8 @@ import (
 	"homework9/internal/user"
 )
 
+var ErrMissingArgument = errors.New("required argument is missing")
+
 func AdSuccessResponse(ad *ads.Ad) *AdResponse {
 	return &AdResponse{
 		Id:          ad.ID,

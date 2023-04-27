@@ -114,7 +114,7 @@ func TestListAdsByDate(t *testing.T) {
 	_, err = client.createAd(user2.Data.ID, "best cat", "not for sale")
 	assert.NoError(t, err)
 
-	ads, err := client.listAdsByDate(time.Now().Format(DateLayout))
+	ads, err := client.listAdsByDate(time.Now().UTC().Format(DateLayout))
 	assert.NoError(t, err)
 	assert.Len(t, ads.Data, 3)
 }
@@ -140,7 +140,7 @@ func TestListAdsByDate_Yesterday(t *testing.T) {
 	_, err = client.createAd(user2.Data.ID, "best cat", "not for sale")
 	assert.NoError(t, err)
 
-	ads, err := client.listAdsByDate(time.Now().Add(time.Duration(-24) * time.Hour).Format(DateLayout))
+	ads, err := client.listAdsByDate(time.Now().UTC().Add(time.Duration(-24) * time.Hour).Format(DateLayout))
 	assert.NoError(t, err)
 	assert.Len(t, ads.Data, 0)
 }
@@ -166,7 +166,7 @@ func TestListAdsByUserAndDate(t *testing.T) {
 	_, err = client.createAd(user2.Data.ID, "best cat", "not for sale")
 	assert.NoError(t, err)
 
-	ads, err := client.listAdsByUserAndDate(user2.Data.ID, time.Now().Format(DateLayout))
+	ads, err := client.listAdsByUserAndDate(user2.Data.ID, time.Now().UTC().Format(DateLayout))
 	assert.NoError(t, err)
 	assert.Len(t, ads.Data, 2)
 }
@@ -258,7 +258,7 @@ func TestListAdsByOptions(t *testing.T) {
 	_, err = client.changeAdStatus(user2.Data.ID, response.Data.ID, true)
 	assert.NoError(t, err)
 
-	ads, err := client.listAdsByOptions(user1.Data.ID, time.Now().Format(DateLayout), true, target.Data.Title)
+	ads, err := client.listAdsByOptions(user1.Data.ID, time.Now().UTC().Format(DateLayout), true, target.Data.Title)
 	assert.NoError(t, err)
 	assert.Len(t, ads.Data, 1)
 	assert.Equal(t, ads.Data[0].ID, target.Data.ID)
