@@ -10,6 +10,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 )
 
 type adData struct {
@@ -193,6 +195,27 @@ func (tc *testClient) listAds() (adsResponse, error) {
 	err = tc.getResponse(req, &response)
 	if err != nil {
 		return adsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) deleteAd(adID int64, userID int64) (adResponse, error) {
+	v := url.Values{}
+	v.Add("user_id", strconv.FormatInt(userID, 10))
+	queryString := v.Encode()
+
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d?%s", adID, queryString), nil)
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
 	}
 
 	return response, nil

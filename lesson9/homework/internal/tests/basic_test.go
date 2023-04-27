@@ -100,3 +100,20 @@ func TestGetAd(t *testing.T) {
 	assert.Equal(t, response.Data.AuthorID, int64(uResponse.Data.ID))
 	assert.False(t, response.Data.Published)
 }
+
+func TestDeleteAd(t *testing.T) {
+	client := getTestClient()
+
+	user1, err := client.createUser("Mac Miller", "swimming@circles.com")
+	assert.NoError(t, err)
+
+	ad1, err := client.createAd(user1.Data.ID, "Good News", "Dang!")
+	assert.NoError(t, err)
+
+	_, err = client.deleteAd(ad1.Data.ID, user1.Data.ID)
+	assert.NoError(t, err)
+
+	_, err = client.getAd(ad1.Data.ID)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrNotFound)
+}
