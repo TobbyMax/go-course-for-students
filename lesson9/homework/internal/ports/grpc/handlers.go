@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"homework9/internal/app"
+	"net/mail"
 )
 
 func (s *AdService) CreateAd(ctx context.Context, request *CreateAdRequest) (*AdResponse, error) {
@@ -64,7 +65,26 @@ func (s *AdService) ListAds(ctx context.Context, request *ListAdRequest) (*ListA
 }
 
 func (s *AdService) CreateUser(ctx context.Context, request *CreateUserRequest) (*UserResponse, error) {
+	_, err := mail.ParseAddress(request.GetEmail())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	u, err := s.app.CreateUser(ctx, request.GetName(), request.GetEmail())
+
+	if err != nil {
+		return nil, status.Error(GetErrorCode(err), err.Error())
+	}
+	return UserSuccessResponse(u), nil
+}
+
+func (s *AdService) UpdateUser(ctx context.Context, request *UpdateUserRequest) (*UserResponse, error) {
+	_, err := mail.ParseAddress(request.GetEmail())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	u, err := s.app.UpdateUser(ctx, request.GetId(), request.GetName(), request.GetEmail())
 
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())
