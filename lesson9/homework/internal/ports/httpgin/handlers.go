@@ -134,7 +134,7 @@ func getAd(a app.App) gin.HandlerFunc {
 	}
 }
 
-// Метод для получения объявления по id
+// Метод для удаления объявления по id
 func deleteAd(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		adIDStr := c.Param("ad_id")

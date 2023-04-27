@@ -32,6 +32,7 @@ type adsResponse struct {
 var (
 	ErrBadRequest = fmt.Errorf("bad request")
 	ErrForbidden  = fmt.Errorf("forbidden")
+	ErrNotFound   = fmt.Errorf("not found")
 )
 
 type testClient struct {
@@ -62,6 +63,9 @@ func (tc *testClient) getResponse(req *http.Request, out any) error {
 		if resp.StatusCode == http.StatusForbidden {
 			return ErrForbidden
 		}
+		if resp.StatusCode == http.StatusNotFound {
+			return ErrNotFound
+		}
 		return fmt.Errorf("unexpected status code: %s", resp.Status)
 	}
 
@@ -91,6 +95,23 @@ func (tc *testClient) createAd(userID int64, title string, text string) (adRespo
 	}
 
 	req, err := http.NewRequest(http.MethodPost, tc.baseURL+"/api/v1/ads", bytes.NewReader(data))
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) getAd(adID int64) (adResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d", adID), nil)
 	if err != nil {
 		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}

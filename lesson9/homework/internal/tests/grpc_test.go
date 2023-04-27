@@ -49,7 +49,7 @@ func TestGRRPCCreateUser(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg"})
+	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err, "client.GetUser")
 
 	assert.Equal(t, "Oleg", res.Name)
