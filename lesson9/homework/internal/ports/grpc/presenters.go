@@ -6,16 +6,18 @@ import (
 	"google.golang.org/grpc/codes"
 	"homework9/internal/ads"
 	"homework9/internal/app"
-	"time"
+	"homework9/internal/user"
 )
 
 func AdSuccessResponse(ad *ads.Ad) *AdResponse {
 	return &AdResponse{
-		Id:        ad.ID,
-		Title:     ad.Title,
-		Text:      ad.Text,
-		AuthorId:  ad.AuthorID,
-		Published: ad.Published,
+		Id:          ad.ID,
+		Title:       ad.Title,
+		Text:        ad.Text,
+		AuthorId:    ad.AuthorID,
+		Published:   ad.Published,
+		DateCreated: app.FormatDate(ad.DateCreated),
+		DateChanged: app.FormatDate(ad.DateChanged),
 	}
 }
 
@@ -26,6 +28,14 @@ func AdListSuccessResponse(al *ads.AdList) *ListAdResponse {
 		response.List = append(response.List, AdSuccessResponse(&ad))
 	}
 	return &response
+}
+
+func UserSuccessResponse(u *user.User) *UserResponse {
+	return &UserResponse{
+		Id:    u.ID,
+		Name:  u.Nickname,
+		Email: u.Email,
+	}
 }
 
 func GetErrorCode(err error) codes.Code {
@@ -40,15 +50,4 @@ func GetErrorCode(err error) codes.Code {
 		return codes.NotFound
 	}
 	return codes.Internal
-}
-
-func ParseDate(s *string) (*time.Time, error) {
-	if s == nil {
-		return nil, nil
-	}
-	date, err := time.Parse("2006-01-02", *s)
-	if err != nil {
-		return nil, err
-	}
-	return &date, nil
 }

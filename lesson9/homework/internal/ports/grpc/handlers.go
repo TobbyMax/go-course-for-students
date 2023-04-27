@@ -46,7 +46,7 @@ func (s *AdService) GetAd(ctx context.Context, request *GetAdRequest) (*AdRespon
 }
 
 func (s *AdService) ListAds(ctx context.Context, request *ListAdRequest) (*ListAdResponse, error) {
-	date, err := ParseDate(request.Date)
+	date, err := app.ParseDate(request.Date)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -69,11 +69,7 @@ func (s *AdService) CreateUser(ctx context.Context, request *CreateUserRequest) 
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())
 	}
-	return &UserResponse{
-		Id:    u.ID,
-		Name:  u.Nickname,
-		Email: u.Email,
-	}, nil
+	return UserSuccessResponse(u), nil
 }
 
 func (s *AdService) GetUser(ctx context.Context, request *GetUserRequest) (*UserResponse, error) {
@@ -82,11 +78,7 @@ func (s *AdService) GetUser(ctx context.Context, request *GetUserRequest) (*User
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())
 	}
-	return &UserResponse{
-		Id:    u.ID,
-		Name:  u.Nickname,
-		Email: u.Email,
-	}, nil
+	return UserSuccessResponse(u), nil
 }
 
 func (s *AdService) DeleteUser(ctx context.Context, request *DeleteUserRequest) (*emptypb.Empty, error) {

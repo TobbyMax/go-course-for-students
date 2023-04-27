@@ -41,6 +41,8 @@ message AdResponse {
   string text = 3;
   int64 author_id = 4;
   bool published = 5;
+  string date_created = 6;
+  string date_changed = 7;
 }
 
 message ListAdResponse {
