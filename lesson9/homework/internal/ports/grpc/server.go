@@ -2,9 +2,14 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"homework9/internal/app"
 	"log"
+	"runtime/debug"
 	"time"
 )
 
@@ -17,7 +22,7 @@ func NewService(a app.App) AdServiceServer {
 	return service
 }
 
-func LoggerInterceptor(ctx context.Context,
+func UnaryLoggerInterceptor(ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler) (interface{}, error) {
@@ -32,4 +37,15 @@ func LoggerInterceptor(ctx context.Context,
 		latency, info.FullMethod, err)
 
 	return h, err
+}
+
+func UnaryRecoveryInterceptor() grpc.UnaryServerInterceptor {
+	stackTraceLogger := grpcRecovery.WithRecoveryHandlerContext(
+		func(ctx context.Context, p interface{}) error {
+			fmt.Print("\n\n")
+			log.Printf("[PANIC] %s\n%s\n", p, string(debug.Stack()))
+			return status.Errorf(codes.Internal, "%s", p)
+		},
+	)
+	return grpcRecovery.UnaryServerInterceptor(stackTraceLogger)
 }
