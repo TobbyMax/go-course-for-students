@@ -10,7 +10,10 @@ import (
 )
 
 func (s *AdService) CreateAd(ctx context.Context, request *CreateAdRequest) (*AdResponse, error) {
-	ad, err := s.app.CreateAd(ctx, request.Title, request.Text, request.UserId)
+	if request.UserId == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
+	ad, err := s.app.CreateAd(ctx, request.GetTitle(), request.GetText(), request.GetUserId())
 
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())
@@ -20,7 +23,10 @@ func (s *AdService) CreateAd(ctx context.Context, request *CreateAdRequest) (*Ad
 }
 
 func (s *AdService) ChangeAdStatus(ctx context.Context, request *ChangeAdStatusRequest) (*AdResponse, error) {
-	ad, err := s.app.ChangeAdStatus(ctx, request.AdId, request.UserId, request.Published)
+	if request.AdId == nil || request.UserId == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
+	ad, err := s.app.ChangeAdStatus(ctx, request.GetAdId(), request.GetUserId(), request.GetPublished())
 
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())
@@ -29,6 +35,9 @@ func (s *AdService) ChangeAdStatus(ctx context.Context, request *ChangeAdStatusR
 }
 
 func (s *AdService) UpdateAd(ctx context.Context, request *UpdateAdRequest) (*AdResponse, error) {
+	if request.AdId == nil || request.UserId == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
 	ad, err := s.app.UpdateAd(ctx, request.GetAdId(), request.GetUserId(), request.GetTitle(), request.GetText())
 
 	if err != nil {
@@ -38,6 +47,9 @@ func (s *AdService) UpdateAd(ctx context.Context, request *UpdateAdRequest) (*Ad
 }
 
 func (s *AdService) GetAd(ctx context.Context, request *GetAdRequest) (*AdResponse, error) {
+	if request.AdId == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
 	ad, err := s.app.GetAd(ctx, request.GetAdId())
 
 	if err != nil {
@@ -79,6 +91,9 @@ func (s *AdService) CreateUser(ctx context.Context, request *CreateUserRequest) 
 }
 
 func (s *AdService) UpdateUser(ctx context.Context, request *UpdateUserRequest) (*UserResponse, error) {
+	if request.Id == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
 	_, err := mail.ParseAddress(request.GetEmail())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -93,6 +108,9 @@ func (s *AdService) UpdateUser(ctx context.Context, request *UpdateUserRequest) 
 }
 
 func (s *AdService) GetUser(ctx context.Context, request *GetUserRequest) (*UserResponse, error) {
+	if request.Id == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
 	u, err := s.app.GetUser(ctx, request.GetId())
 
 	if err != nil {
@@ -102,6 +120,9 @@ func (s *AdService) GetUser(ctx context.Context, request *GetUserRequest) (*User
 }
 
 func (s *AdService) DeleteUser(ctx context.Context, request *DeleteUserRequest) (*emptypb.Empty, error) {
+	if request.Id == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
 	err := s.app.DeleteUser(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())
@@ -110,6 +131,9 @@ func (s *AdService) DeleteUser(ctx context.Context, request *DeleteUserRequest) 
 }
 
 func (s *AdService) DeleteAd(ctx context.Context, request *DeleteAdRequest) (*emptypb.Empty, error) {
+	if request.AdId == nil || request.AuthorId == nil {
+		return nil, status.Error(codes.InvalidArgument, ErrMissingArgument.Error())
+	}
 	err := s.app.DeleteAd(ctx, request.GetAdId(), request.GetAuthorId())
 	if err != nil {
 		return nil, status.Error(GetErrorCode(err), err.Error())

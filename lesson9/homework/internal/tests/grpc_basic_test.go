@@ -94,10 +94,10 @@ func TestGRRPCGetUser(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err := client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
+	res, err := client.GetUser(ctx, &grpcPort.GetUserRequest{Id: &user.Id})
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), res.Id)
@@ -141,14 +141,14 @@ func TestGRRPCDeleteUser(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	_, err = client.DeleteUser(ctx, &grpcPort.DeleteUserRequest{Id: 0})
+	_, err = client.DeleteUser(ctx, &grpcPort.DeleteUserRequest{Id: &user.Id})
 
 	assert.NoError(t, err)
 
-	_, err = client.GetUser(ctx, &grpcPort.GetUserRequest{Id: 0})
+	_, err = client.GetUser(ctx, &grpcPort.GetUserRequest{Id: &user.Id})
 	assert.Error(t, err)
 	assert.Equal(t, ErrUserNotFound.Error(), err.Error())
 }
@@ -189,10 +189,10 @@ func TestGRRPCUpdateUser(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err := client.UpdateUser(ctx, &grpcPort.UpdateUserRequest{Id: 0, Name: "Kanye", Email: "graduation@west.com"})
+	res, err := client.UpdateUser(ctx, &grpcPort.UpdateUserRequest{Id: &user.Id, Name: "Kanye", Email: "graduation@west.com"})
 	assert.NoError(t, err)
 	assert.Equal(t, "Kanye", res.Name)
 	assert.Equal(t, "graduation@west.com", res.Email)
@@ -234,10 +234,10 @@ func TestGRRPCCreateAd(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	res, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	res, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user.Id})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), res.Id)
 	assert.Equal(t, "Forest", res.Title)
@@ -282,13 +282,13 @@ func TestGRRPCChangeAdStatus(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user.Id})
 	assert.NoError(t, err)
 
-	res, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: 0, UserId: 0, Published: true})
+	res, err := client.ChangeAdStatus(ctx, &grpcPort.ChangeAdStatusRequest{AdId: &ad.Id, UserId: &user.Id, Published: true})
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), res.Id)
@@ -334,13 +334,13 @@ func TestGRRPCUpdateAd(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user.Id})
 	assert.NoError(t, err)
 
-	res, err := client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: 0, UserId: 0, Title: "Corny", Text: "Low Key"})
+	res, err := client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: &ad.Id, UserId: &user.Id, Title: "Corny", Text: "Low Key"})
 	assert.NoError(t, err)
 
 	assert.Equal(t, int64(0), res.Id)
@@ -386,15 +386,15 @@ func TestGRRPCGetAd(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user.Id})
 	assert.NoError(t, err)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: 0, UserId: 0, Title: "Corny", Text: "Low Key"})
+	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{AdId: &ad.Id, UserId: &user.Id, Title: "Corny", Text: "Low Key"})
 	assert.NoError(t, err)
-	res, err := client.GetAd(ctx, &grpcPort.GetAdRequest{AdId: 0})
+	res, err := client.GetAd(ctx, &grpcPort.GetAdRequest{AdId: &ad.Id})
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), res.Id)
 	assert.Equal(t, "Corny", res.Title)
@@ -439,16 +439,16 @@ func TestGRRPCDeleteAd(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
+	user, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "ivanov@yandex.ru"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	ad, err := client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user.Id})
 	assert.NoError(t, err)
 
-	_, err = client.DeleteAd(ctx, &grpcPort.DeleteAdRequest{AdId: 0, AuthorId: 0})
+	_, err = client.DeleteAd(ctx, &grpcPort.DeleteAdRequest{AdId: &ad.Id, AuthorId: &user.Id})
 	assert.NoError(t, err)
 
-	_, err = client.GetAd(ctx, &grpcPort.GetAdRequest{AdId: 0})
+	_, err = client.GetAd(ctx, &grpcPort.GetAdRequest{AdId: &ad.Id})
 	assert.Error(t, err)
 
 	assert.Equal(t, ErrAdNotFound.Error(), err.Error())

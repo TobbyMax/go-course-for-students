@@ -96,7 +96,7 @@ func TestGRPCUpdateUser_InvalidEmail(t *testing.T) {
 	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "MacMiller", Email: "swimming@circles.com"})
 	assert.NoError(t, err)
 
-	_, err = client.UpdateUser(ctx, &grpcPort.UpdateUserRequest{Id: res.Id, Name: "MacMiller", Email: "good_am.ru"})
+	_, err = client.UpdateUser(ctx, &grpcPort.UpdateUserRequest{Id: &res.Id, Name: "MacMiller", Email: "good_am.ru"})
 	assert.Error(t, err)
 	assert.Equal(t, ErrInvalidEmail.Error(), err.Error())
 }
@@ -137,10 +137,10 @@ func TestGRPCCreateAd_EmptyTitle(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "", Text: "Hill Drive", UserId: &user1.Id})
 	assert.Error(t, err)
 }
 
@@ -180,12 +180,12 @@ func TestGRPCCreateAd_TooLongTitle(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
 	text := strings.Repeat("a", 101)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: text, Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: text, Text: "Hill Drive", UserId: &user1.Id})
 	assert.Error(t, err)
 }
 
@@ -225,12 +225,12 @@ func TestGRPCCreateAd_TooLongText(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
 	text := strings.Repeat("a", 501)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: text, UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: text, UserId: &user1.Id})
 	assert.Error(t, err)
 }
 
@@ -270,13 +270,13 @@ func TestGRPCUpdateAd_EmptyTitle(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
 	assert.NoError(t, err)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "", Text: "Hill Drive", UserId: 0})
+	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "", Text: "Hill Drive", UserId: &user1.Id})
 	assert.Error(t, err)
 }
 
@@ -316,14 +316,14 @@ func TestGRPCUpdateAd_TooLongTitle(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
 	assert.NoError(t, err)
 	text := strings.Repeat("a", 101)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: text, Text: "Hill Drive", UserId: 0})
+	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: text, Text: "Hill Drive", UserId: &user1.Id})
 	assert.Error(t, err)
 }
 
@@ -363,13 +363,13 @@ func TestGRPCUpdateAd_EmptyText(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
 	assert.NoError(t, err)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: "", UserId: 0})
+	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: "", UserId: &user1.Id})
 	assert.Error(t, err)
 }
 
@@ -409,13 +409,13 @@ func TestGRPCUpdateAd_TooLongText(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
 	assert.NoError(t, err)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: 0})
+	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
 	assert.NoError(t, err)
 	text := strings.Repeat("a", 501)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: text, UserId: 0})
+	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: text, UserId: &user1.Id})
 	assert.Error(t, err)
 }
