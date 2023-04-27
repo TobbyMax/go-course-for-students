@@ -4,21 +4,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
-
 	"homework9/internal/adapters/adrepo"
 	"homework9/internal/app"
 	"homework9/internal/ports/httpgin"
+	"io"
+	"net/http"
+	"net/http/httptest"
 )
 
 type adData struct {
-	ID        int64  `json:"id"`
-	Title     string `json:"title"`
-	Text      string `json:"text"`
-	AuthorID  int64  `json:"author_id"`
-	Published bool   `json:"published"`
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Text        string `json:"text"`
+	AuthorID    int64  `json:"author_id"`
+	Published   bool   `json:"published"`
+	DateCreated string `json:"date_created"`
+	DateChanged string `json:"date_changed"`
 }
 
 type adResponse struct {
