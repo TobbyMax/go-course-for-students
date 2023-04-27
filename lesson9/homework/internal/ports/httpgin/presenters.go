@@ -3,8 +3,8 @@ package httpgin
 import (
 	"github.com/gin-gonic/gin"
 	"homework9/internal/ads"
+	"homework9/internal/app"
 	"homework9/internal/user"
-	"time"
 )
 
 type createUserRequest struct {
@@ -30,13 +30,13 @@ type createAdRequest struct {
 }
 
 type adResponse struct {
-	ID          int64     `json:"id"`
-	Title       string    `json:"title"`
-	Text        string    `json:"text"`
-	AuthorID    int64     `json:"author_id"`
-	Published   bool      `json:"published"`
-	DateCreated time.Time `json:"date_created"`
-	DateChanged time.Time `json:"date_changed"`
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Text        string `json:"text"`
+	AuthorID    int64  `json:"author_id"`
+	Published   bool   `json:"published"`
+	DateCreated string `json:"date_created"`
+	DateChanged string `json:"date_changed"`
 }
 
 type changeAdStatusRequest struct {
@@ -51,10 +51,10 @@ type updateAdRequest struct {
 }
 
 type listAdsRequest struct {
-	Published *bool      `json:"published"`
-	UserID    *int64     `json:"user_id"`
-	Date      *time.Time `json:"date"`
-	Title     *string    `json:"title"`
+	Published *bool   `json:"published"`
+	UserID    *int64  `json:"user_id"`
+	Date      *string `json:"date"`
+	Title     *string `json:"title"`
 }
 
 type adListResponse []adResponse
@@ -67,8 +67,8 @@ func AdSuccessResponse(ad *ads.Ad) *gin.H {
 			Text:        ad.Text,
 			AuthorID:    ad.AuthorID,
 			Published:   ad.Published,
-			DateCreated: ad.DateCreated,
-			DateChanged: ad.DateChanged,
+			DateCreated: app.FormatDate(ad.DateCreated),
+			DateChanged: app.FormatDate(ad.DateChanged),
 		},
 		"error": nil,
 	}
@@ -84,8 +84,8 @@ func AdListSuccessResponse(al *ads.AdList) *gin.H {
 				Text:        ad.Text,
 				AuthorID:    ad.AuthorID,
 				Published:   ad.Published,
-				DateCreated: ad.DateCreated,
-				DateChanged: ad.DateChanged,
+				DateCreated: app.FormatDate(ad.DateCreated),
+				DateChanged: app.FormatDate(ad.DateChanged),
 			})
 	}
 	return &gin.H{

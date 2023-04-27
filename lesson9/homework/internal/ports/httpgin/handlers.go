@@ -177,11 +177,16 @@ func listAds(a app.App) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
 			return
 		}
+		date, err := app.ParseDate(reqBody.Date)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+			return
+		}
 
 		al, err := a.ListAds(c, app.ListAdsParams{
 			Published: reqBody.Published,
 			Uid:       reqBody.UserID,
-			Date:      reqBody.Date,
+			Date:      date,
 			Title:     reqBody.Title,
 		})
 
