@@ -36,6 +36,7 @@ var (
 	ErrBadRequest = fmt.Errorf("bad request")
 	ErrForbidden  = fmt.Errorf("forbidden")
 	ErrNotFound   = fmt.Errorf("not found")
+	ErrMock       = fmt.Errorf("mock error")
 )
 
 type testClient struct {
