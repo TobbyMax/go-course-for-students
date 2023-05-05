@@ -17,7 +17,7 @@ type userResponse struct {
 	Data userData `json:"data"`
 }
 
-func (tc *testClient) createUser(nickname string, email string) (userResponse, error) {
+func (tc *testClient) createUser(nickname any, email any) (userResponse, error) {
 	body := map[string]any{
 		"nickname": nickname,
 		"email":    email,
@@ -44,8 +44,8 @@ func (tc *testClient) createUser(nickname string, email string) (userResponse, e
 	return response, nil
 }
 
-func (tc *testClient) getUser(userID int64) (userResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), nil)
+func (tc *testClient) getUser(userID any) (userResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/users/%v", userID), nil)
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -61,7 +61,7 @@ func (tc *testClient) getUser(userID int64) (userResponse, error) {
 	return response, nil
 }
 
-func (tc *testClient) updateUser(userID int64, nickname string, email string) (userResponse, error) {
+func (tc *testClient) updateUser(userID any, nickname any, email any) (userResponse, error) {
 	body := map[string]any{
 		"nickname": nickname,
 		"email":    email,
@@ -72,7 +72,7 @@ func (tc *testClient) updateUser(userID int64, nickname string, email string) (u
 		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), bytes.NewReader(data))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf(tc.baseURL+"/api/v1/users/%v", userID), bytes.NewReader(data))
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -88,8 +88,8 @@ func (tc *testClient) updateUser(userID int64, nickname string, email string) (u
 	return response, nil
 }
 
-func (tc *testClient) deleteUser(userID int64) (userResponse, error) {
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), nil)
+func (tc *testClient) deleteUser(userID any) (userResponse, error) {
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf(tc.baseURL+"/api/v1/users/%v", userID), nil)
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}

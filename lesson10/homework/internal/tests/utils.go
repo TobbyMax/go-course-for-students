@@ -37,6 +37,7 @@ var (
 	ErrForbidden  = fmt.Errorf("forbidden")
 	ErrNotFound   = fmt.Errorf("not found")
 	ErrMock       = fmt.Errorf("mock error")
+	ErrInternal   = fmt.Errorf("internal server error")
 )
 
 type testClient struct {
@@ -69,6 +70,9 @@ func (tc *testClient) getResponse(req *http.Request, out any) error {
 		}
 		if resp.StatusCode == http.StatusNotFound {
 			return ErrNotFound
+		}
+		if resp.StatusCode == http.StatusInternalServerError {
+			return ErrInternal
 		}
 		return fmt.Errorf("unexpected status code: %s", resp.Status)
 	}
@@ -114,8 +118,8 @@ func (tc *testClient) createAd(userID int64, title string, text string) (adRespo
 	return response, nil
 }
 
-func (tc *testClient) getAd(adID int64) (adResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d", adID), nil)
+func (tc *testClient) getAd(adID any) (adResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%v", adID), nil)
 	if err != nil {
 		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
