@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func FuzzCreateUserID_Fuzz(f *testing.F) {
+func FuzzCreateUserID(f *testing.F) {
 	client := getTestClient()
 	for i := 0; i < 100; i++ {
 		f.Add(i)
@@ -22,7 +22,7 @@ func FuzzCreateUserID_Fuzz(f *testing.F) {
 	})
 }
 
-func FuzzGetUserID_Fuzz(f *testing.F) {
+func FuzzGetUserID(f *testing.F) {
 	client := getTestClient()
 	for i := 0; i < 100; i++ {
 		f.Add(i)

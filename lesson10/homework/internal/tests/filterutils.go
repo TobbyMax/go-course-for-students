@@ -12,7 +12,7 @@ const (
 	DateTimeLayout = "Mon, 2 Jan 2006 15:04:05 MST"
 )
 
-func (tc *testClient) listAdsByStatus(published bool) (adsResponse, error) {
+func (tc *testClient) listAdsByStatus(published any) (adsResponse, error) {
 	body := map[string]any{
 		"published": published,
 	}

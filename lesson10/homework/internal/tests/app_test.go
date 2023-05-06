@@ -13,7 +13,7 @@ import (
 )
 
 func TestApp_CreateAd(t *testing.T) {
-	repo := &mocks.Repository{}
+	repo := mocks.NewRepository(t)
 	ctx := context.Background()
 	id := int64(13)
 	repo.On("AddAd", ctx, mock.AnythingOfType("ads.Ad")).
