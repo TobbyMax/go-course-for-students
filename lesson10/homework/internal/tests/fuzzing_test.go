@@ -17,10 +17,6 @@ func FuzzCreateUserCheck(f *testing.F) {
 			case errors.Is(err, ErrForbidden):
 				fallthrough
 			case errors.Is(err, ErrBadRequest):
-				fallthrough
-			case errors.Is(err, ErrNotFound):
-				fallthrough
-			case errors.Is(err, ErrInternal):
 				return
 			default:
 				panic(err.Error())
