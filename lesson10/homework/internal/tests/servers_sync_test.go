@@ -29,7 +29,6 @@ type ServerSuite struct {
 	ClientGRPC grpcSvc.AdServiceClient
 	Lis        *bufconn.Listener
 	SigQuit    chan os.Signal
-	eg         *errgroup.Group
 
 	CtxClient    context.Context
 	CancelClient context.CancelFunc
@@ -120,12 +119,14 @@ func (suite *ServerSuite) TestAds() {
 			suite.NoError(err)
 
 			ad, err := suite.ClientHTTP.createAd(u.Data.ID, title, text)
+			suite.NoError(err)
 			suite.Equal(int64(id), ad.Data.ID)
 			suite.Equal(title, ad.Data.Title)
 			suite.Equal(text, ad.Data.Text)
 		} else {
 			u, err := suite.ClientGRPC.CreateUser(suite.CtxClient,
 				&grpcSvc.CreateUserRequest{Name: name, Email: email})
+			suite.NoError(err)
 			ad, err := suite.ClientGRPC.CreateAd(suite.CtxClient,
 				&grpcSvc.CreateAdRequest{Title: title, Text: text, UserId: &u.Id})
 			suite.NoError(err)

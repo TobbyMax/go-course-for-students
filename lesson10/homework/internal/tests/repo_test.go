@@ -47,6 +47,7 @@ func (suite *RepoSuite) TestRepo_AddMultipleUsers() {
 func (suite *RepoSuite) TestRepo_GetUser() {
 	u := user.User{Nickname: "Mac Miller", Email: "swimmig@circles.com"}
 	id, err := suite.Repo.AddUser(suite.Ctx, u)
+	suite.NoError(err)
 	res, err := suite.Repo.GetUserByID(suite.Ctx, id)
 	suite.NoError(err)
 	suite.Equal(u, *res)

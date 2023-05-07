@@ -1038,8 +1038,11 @@ func (suite *GRPCMockSuite) TestHandler_Filter() {
 func (suite *GRPCMockSuite) TestPanic() {
 	*suite.App = mocks.App{}
 	suite.NotPanics(func() {
-		suite.Client.ListAds(suite.Context,
+		_, err := suite.Client.ListAds(suite.Context,
 			&grpcPort.ListAdRequest{})
+		if err != nil {
+			log.Printf("Function returned error: %v", err)
+		}
 	})
 }
 
