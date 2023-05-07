@@ -1,53 +1,45 @@
 package tests
 
-import (
-	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
-)
+import "time"
 
-func TestCreateDate(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestCreateDate() {
+	uResponse, err := suite.Client.createUser("J.Cole", "foresthill@drive.com")
+	suite.NoError(err)
 
-	uResponse, err := client.createUser("J.Cole", "foresthill@drive.com")
-	assert.NoError(t, err)
+	response, err := suite.Client.createAd(uResponse.Data.ID, "hello", "world")
+	suite.NoError(err)
+	suite.Zero(response.Data.ID)
+	suite.Equal(response.Data.Title, "hello")
+	suite.Equal(response.Data.Text, "world")
+	suite.Equal(response.Data.AuthorID, uResponse.Data.ID)
+	suite.False(response.Data.Published)
 
-	response, err := client.createAd(uResponse.Data.ID, "hello", "world")
-	assert.NoError(t, err)
-	assert.Zero(t, response.Data.ID)
-	assert.Equal(t, response.Data.Title, "hello")
-	assert.Equal(t, response.Data.Text, "world")
-	assert.Equal(t, response.Data.AuthorID, uResponse.Data.ID)
-	assert.False(t, response.Data.Published)
-
-	assert.True(t, response.Data.DateCreated == response.Data.DateChanged)
+	suite.True(response.Data.DateCreated == response.Data.DateChanged)
 	date, _ := time.Parse(DateTimeLayout, response.Data.DateCreated)
-	assert.True(t, time.Since(date) < time.Hour)
+	suite.True(time.Since(date) < time.Hour)
 }
 
-func TestChangeDate(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestChangeDate() {
+	uResponse, err := suite.Client.createUser("J.Cole", "foresthill@drive.com")
+	suite.NoError(err)
 
-	uResponse, err := client.createUser("J.Cole", "foresthill@drive.com")
-	assert.NoError(t, err)
-
-	response, err := client.createAd(uResponse.Data.ID, "hello", "world")
-	assert.NoError(t, err)
+	response, err := suite.Client.createAd(uResponse.Data.ID, "hello", "world")
+	suite.NoError(err)
 
 	time.Sleep(2 * time.Second)
-	response, err = client.changeAdStatus(uResponse.Data.ID, response.Data.ID, true)
-	assert.NoError(t, err)
-	assert.True(t, response.Data.Published)
+	response, err = suite.Client.changeAdStatus(uResponse.Data.ID, response.Data.ID, true)
+	suite.NoError(err)
+	suite.True(response.Data.Published)
 
-	response, err = client.changeAdStatus(uResponse.Data.ID, response.Data.ID, false)
-	assert.NoError(t, err)
-	assert.False(t, response.Data.Published)
+	response, err = suite.Client.changeAdStatus(uResponse.Data.ID, response.Data.ID, false)
+	suite.NoError(err)
+	suite.False(response.Data.Published)
 
-	response, err = client.changeAdStatus(uResponse.Data.ID, response.Data.ID, false)
-	assert.NoError(t, err)
-	assert.False(t, response.Data.Published)
-	
-	assert.True(t, response.Data.DateCreated != response.Data.DateChanged)
+	response, err = suite.Client.changeAdStatus(uResponse.Data.ID, response.Data.ID, false)
+	suite.NoError(err)
+	suite.False(response.Data.Published)
+
+	suite.True(response.Data.DateCreated != response.Data.DateChanged)
 	date, _ := time.Parse(DateTimeLayout, response.Data.DateChanged)
-	assert.True(t, time.Since(date) < time.Hour)
+	suite.True(time.Since(date) < time.Hour)
 }

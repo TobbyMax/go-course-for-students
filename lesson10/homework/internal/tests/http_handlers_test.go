@@ -14,16 +14,16 @@ import (
 	"testing"
 )
 
-type HTTPSuite struct {
+type HTTPMockSuite struct {
 	suite.Suite
 	App    *mocks.App
 	Client *testClient
 }
 
-func (suite *HTTPSuite) SetupTest() {
+func (suite *HTTPMockSuite) SetupTest() {
 	log.Println("Setting Up Test")
 
-	suite.App = &mocks.App{}
+	suite.App = mocks.NewApp(suite.T())
 	server := httpgin.NewHTTPServer(":18080", suite.App)
 	testServer := httptest.NewServer(server.Handler)
 
@@ -33,11 +33,11 @@ func (suite *HTTPSuite) SetupTest() {
 	}
 }
 
-func (suite *HTTPSuite) TearDownTest() {
+func (suite *HTTPMockSuite) TearDownTest() {
 	log.Println("Tearing Down Test")
 }
 
-func (suite *HTTPSuite) TestHandler_CreateUser() {
+func (suite *HTTPMockSuite) TestHandler_CreateUser() {
 	type args struct {
 		badReq   bool
 		nickname string
@@ -47,6 +47,7 @@ func (suite *HTTPSuite) TestHandler_CreateUser() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -56,7 +57,8 @@ func (suite *HTTPSuite) TestHandler_CreateUser() {
 				nickname: "Mac Miller",
 				email:    "swimming@circles.com",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "bad request",
@@ -88,7 +90,8 @@ func (suite *HTTPSuite) TestHandler_CreateUser() {
 				email:    "swimming@circles.com",
 				err:      validator.ValidationErrors{},
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrBadRequest)
 				return true
@@ -101,7 +104,8 @@ func (suite *HTTPSuite) TestHandler_CreateUser() {
 				email:    "swimming@circles.com",
 				err:      ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -110,12 +114,14 @@ func (suite *HTTPSuite) TestHandler_CreateUser() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("CreateUser",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.nickname, tc.args.email,
-			).
-				Return(&user.User{Nickname: tc.args.nickname, Email: tc.args.email}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("CreateUser",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.nickname, tc.args.email,
+				).
+					Return(&user.User{Nickname: tc.args.nickname, Email: tc.args.email}, tc.args.err).
+					Once()
+			}
 			var (
 				response userResponse
 				err      error
@@ -138,7 +144,7 @@ func (suite *HTTPSuite) TestHandler_CreateUser() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_GetUser() {
+func (suite *HTTPMockSuite) TestHandler_GetUser() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -147,6 +153,7 @@ func (suite *HTTPSuite) TestHandler_GetUser() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -155,7 +162,8 @@ func (suite *HTTPSuite) TestHandler_GetUser() {
 			args: args{
 				id: 1,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "bad request",
@@ -174,7 +182,8 @@ func (suite *HTTPSuite) TestHandler_GetUser() {
 				id:  1,
 				err: app.ErrUserNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -186,7 +195,8 @@ func (suite *HTTPSuite) TestHandler_GetUser() {
 				id:  1,
 				err: ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -195,12 +205,14 @@ func (suite *HTTPSuite) TestHandler_GetUser() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("GetUser",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.id,
-			).
-				Return(&user.User{ID: tc.args.id, Nickname: "Mac Miller", Email: "swimming@circles.com"}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("GetUser",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.id,
+				).
+					Return(&user.User{ID: tc.args.id, Nickname: "Mac Miller", Email: "swimming@circles.com"}, tc.args.err).
+					Once()
+			}
 			var (
 				response userResponse
 				err      error
@@ -223,7 +235,7 @@ func (suite *HTTPSuite) TestHandler_GetUser() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_UpdateUser() {
+func (suite *HTTPMockSuite) TestHandler_UpdateUser() {
 	type args struct {
 		badId    bool
 		badBody  bool
@@ -235,6 +247,7 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -245,7 +258,8 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 				nickname: "Mac Miller",
 				email:    "swimming@circles.com",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "validation error",
@@ -255,7 +269,8 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 				email:    "swimming@circles.com",
 				err:      validator.ValidationErrors{},
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrBadRequest)
 				return true
@@ -269,7 +284,8 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 				email:    "swimming@circles.com",
 				err:      app.ErrUserNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -283,7 +299,8 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 				email:    "swimming@circles.com",
 				err:      ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -333,12 +350,14 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
 			id, name, email, e := tc.args.id, tc.args.nickname, tc.args.email, tc.args.err
-			suite.App.On("UpdateUser",
-				mock.AnythingOfType("*gin.Context"),
-				id, name, email,
-			).
-				Return(&user.User{ID: id, Nickname: name, Email: email}, e).
-				Once()
+			if tc.needMock {
+				suite.App.On("UpdateUser",
+					mock.AnythingOfType("*gin.Context"),
+					id, name, email,
+				).
+					Return(&user.User{ID: id, Nickname: name, Email: email}, e).
+					Once()
+			}
 			var (
 				response userResponse
 				err      error
@@ -363,7 +382,7 @@ func (suite *HTTPSuite) TestHandler_UpdateUser() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_DeleteUser() {
+func (suite *HTTPMockSuite) TestHandler_DeleteUser() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -372,6 +391,7 @@ func (suite *HTTPSuite) TestHandler_DeleteUser() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -380,7 +400,8 @@ func (suite *HTTPSuite) TestHandler_DeleteUser() {
 			args: args{
 				id: 1,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "bad request",
@@ -399,7 +420,8 @@ func (suite *HTTPSuite) TestHandler_DeleteUser() {
 				id:  1,
 				err: app.ErrUserNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -411,7 +433,8 @@ func (suite *HTTPSuite) TestHandler_DeleteUser() {
 				id:  1,
 				err: ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -420,12 +443,14 @@ func (suite *HTTPSuite) TestHandler_DeleteUser() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("DeleteUser",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.id,
-			).
-				Return(tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("DeleteUser",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.id,
+				).
+					Return(tc.args.err).
+					Once()
+			}
 			var err error
 			if tc.args.badReq {
 				_, err = suite.Client.deleteUser("hi")
@@ -442,7 +467,7 @@ func (suite *HTTPSuite) TestHandler_DeleteUser() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_CreateAd() {
+func (suite *HTTPMockSuite) TestHandler_CreateAd() {
 	type args struct {
 		badReq bool
 		title  string
@@ -453,6 +478,7 @@ func (suite *HTTPSuite) TestHandler_CreateAd() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -462,14 +488,16 @@ func (suite *HTTPSuite) TestHandler_CreateAd() {
 				title: "DAMN.",
 				text:  "by Kendrick Lamar",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "failed dependency",
 			args: args{
 				err: app.ErrUserNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrFailedDependency)
 				return true
@@ -493,7 +521,8 @@ func (suite *HTTPSuite) TestHandler_CreateAd() {
 				text:  "by Kendrick Lamar",
 				err:   validator.ValidationErrors{},
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrBadRequest)
 				return true
@@ -506,7 +535,8 @@ func (suite *HTTPSuite) TestHandler_CreateAd() {
 				text:  "by Kendrick Lamar",
 				err:   ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -515,12 +545,14 @@ func (suite *HTTPSuite) TestHandler_CreateAd() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("CreateAd",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.title, tc.args.text, tc.args.uid,
-			).
-				Return(&ads.Ad{Title: tc.args.title, Text: tc.args.text}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("CreateAd",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.title, tc.args.text, tc.args.uid,
+				).
+					Return(&ads.Ad{Title: tc.args.title, Text: tc.args.text}, tc.args.err).
+					Once()
+			}
 			var (
 				response adResponse
 				err      error
@@ -543,7 +575,7 @@ func (suite *HTTPSuite) TestHandler_CreateAd() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_GetAd() {
+func (suite *HTTPMockSuite) TestHandler_GetAd() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -552,6 +584,7 @@ func (suite *HTTPSuite) TestHandler_GetAd() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -560,14 +593,16 @@ func (suite *HTTPSuite) TestHandler_GetAd() {
 			args: args{
 				id: 2009,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "id not found",
 			args: args{
 				err: app.ErrAdNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -590,7 +625,8 @@ func (suite *HTTPSuite) TestHandler_GetAd() {
 				id:  2009,
 				err: ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -599,12 +635,14 @@ func (suite *HTTPSuite) TestHandler_GetAd() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("GetAd",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.id,
-			).
-				Return(&ads.Ad{ID: tc.args.id}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("GetAd",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.id,
+				).
+					Return(&ads.Ad{ID: tc.args.id}, tc.args.err).
+					Once()
+			}
 			var (
 				response adResponse
 				err      error
@@ -625,7 +663,7 @@ func (suite *HTTPSuite) TestHandler_GetAd() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_UpdateAd() {
+func (suite *HTTPMockSuite) TestHandler_UpdateAd() {
 	type args struct {
 		badId   bool
 		badBody bool
@@ -638,6 +676,7 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -649,7 +688,8 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 				text:  "by Kendrick Lamar",
 				uid:   13,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "validation error",
@@ -660,7 +700,8 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   validator.ValidationErrors{},
 			},
-			wantErr: true,
+			wantErr:  true,
+			needMock: true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrBadRequest)
 				return true
@@ -675,7 +716,8 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   app.ErrAdNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -690,7 +732,8 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   app.ErrForbidden,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrForbidden)
 				return true
@@ -705,7 +748,8 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -743,12 +787,14 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("UpdateAd",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.id, tc.args.uid, tc.args.title, tc.args.text,
-			).
-				Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Title: tc.args.title, Text: tc.args.text}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("UpdateAd",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.id, tc.args.uid, tc.args.title, tc.args.text,
+				).
+					Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Title: tc.args.title, Text: tc.args.text}, tc.args.err).
+					Once()
+			}
 			var (
 				response adResponse
 				err      error
@@ -774,7 +820,7 @@ func (suite *HTTPSuite) TestHandler_UpdateAd() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
+func (suite *HTTPMockSuite) TestHandler_ChangeAdStatus() {
 	type args struct {
 		badId     bool
 		badBody   bool
@@ -786,6 +832,7 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -796,7 +843,8 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 				published: true,
 				uid:       13,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "id not found",
@@ -806,7 +854,8 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 				uid:       13,
 				err:       app.ErrAdNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -820,7 +869,8 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 				uid:       13,
 				err:       app.ErrForbidden,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrForbidden)
 				return true
@@ -834,7 +884,8 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 				uid:       13,
 				err:       ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -870,12 +921,14 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("ChangeAdStatus",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.id, tc.args.uid, tc.args.published,
-			).
-				Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Published: tc.args.published}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("ChangeAdStatus",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.id, tc.args.uid, tc.args.published,
+				).
+					Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Published: tc.args.published}, tc.args.err).
+					Once()
+			}
 			var (
 				response adResponse
 				err      error
@@ -899,7 +952,7 @@ func (suite *HTTPSuite) TestHandler_ChangeAdStatus() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_DeleteAd() {
+func (suite *HTTPMockSuite) TestHandler_DeleteAd() {
 	type args struct {
 		badID  bool
 		badUID bool
@@ -911,6 +964,7 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
@@ -920,7 +974,8 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 				id:  2009,
 				uid: 13,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "id not found",
@@ -929,7 +984,8 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 				uid: 13,
 				err: app.ErrAdNotFound,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrNotFound)
 				return true
@@ -942,7 +998,8 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 				uid: 13,
 				err: app.ErrForbidden,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrForbidden)
 				return true
@@ -955,7 +1012,8 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 				uid: 13,
 				err: ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -1002,12 +1060,14 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("DeleteAd",
-				mock.AnythingOfType("*gin.Context"),
-				tc.args.id, tc.args.uid,
-			).
-				Return(tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("DeleteAd",
+					mock.AnythingOfType("*gin.Context"),
+					tc.args.id, tc.args.uid,
+				).
+					Return(tc.args.err).
+					Once()
+			}
 			var err error
 			if tc.args.badID {
 				_, err = suite.Client.deleteAd("hi", tc.args.uid)
@@ -1028,7 +1088,7 @@ func (suite *HTTPSuite) TestHandler_DeleteAd() {
 	}
 }
 
-func (suite *HTTPSuite) TestHandler_Filter() {
+func (suite *HTTPMockSuite) TestHandler_Filter() {
 	type args struct {
 		badBody bool
 		badDate bool
@@ -1037,20 +1097,23 @@ func (suite *HTTPSuite) TestHandler_Filter() {
 	tests := []struct {
 		name     string
 		args     args
+		needMock bool
 		wantErr  bool
 		checkErr func(err error) bool
 	}{
 		{
-			name:    "successful filter",
-			args:    args{},
-			wantErr: false,
+			name:     "successful filter",
+			args:     args{},
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "internal error",
 			args: args{
 				err: ErrMock,
 			},
-			wantErr: true,
+			needMock: true,
+			wantErr:  true,
 			checkErr: func(err error) bool {
 				suite.ErrorIs(err, ErrInternal)
 				return true
@@ -1081,12 +1144,14 @@ func (suite *HTTPSuite) TestHandler_Filter() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("ListAds",
-				mock.AnythingOfType("*gin.Context"),
-				mock.AnythingOfType("app.ListAdsParams"),
-			).
-				Return(&ads.AdList{}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("ListAds",
+					mock.AnythingOfType("*gin.Context"),
+					mock.AnythingOfType("app.ListAdsParams"),
+				).
+					Return(&ads.AdList{}, tc.args.err).
+					Once()
+			}
 			var err error
 			if tc.args.badBody {
 				_, err = suite.Client.listAdsByStatus(1)
@@ -1106,5 +1171,5 @@ func (suite *HTTPSuite) TestHandler_Filter() {
 }
 
 func TestHTTPHandlers(t *testing.T) {
-	suite.Run(t, new(HTTPSuite))
+	suite.Run(t, new(HTTPMockSuite))
 }

@@ -1,108 +1,87 @@
 package tests
 
-import (
-	"github.com/stretchr/testify/assert"
-	"testing"
-)
-
-func TestCreateUser(t *testing.T) {
-	client := getTestClient()
-
-	response, err := client.createUser("TobbyMax", "agemax@gmail.com")
-	assert.NoError(t, err)
-	assert.Zero(t, response.Data.ID)
-	assert.Equal(t, "TobbyMax", response.Data.Nickname)
-	assert.Equal(t, "agemax@gmail.com", response.Data.Email)
+func (suite *HTTPSuite) TestCreateUser() {
+	response, err := suite.Client.createUser("TobbyMax", "agemax@gmail.com")
+	suite.NoError(err)
+	suite.Zero(response.Data.ID)
+	suite.Equal("TobbyMax", response.Data.Nickname)
+	suite.Equal("agemax@gmail.com", response.Data.Email)
 }
 
-func TestCreateUser_InvalidEmail(t *testing.T) {
-	client := getTestClient()
-
-	_, err := client.createUser("TobbyMax", "abc")
-	assert.ErrorIs(t, err, ErrBadRequest)
+func (suite *HTTPSuite) TestCreateUser_InvalidEmail() {
+	_, err := suite.Client.createUser("TobbyMax", "abc")
+	suite.ErrorIs(err, ErrBadRequest)
 }
 
-func TestGetUser(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestGetUser() {
+	response, err := suite.Client.createUser("TobbyMax", "agemax@gmail.com")
+	suite.NoError(err)
 
-	response, err := client.createUser("TobbyMax", "agemax@gmail.com")
-	assert.NoError(t, err)
-
-	response, err = client.getUser(response.Data.ID)
-	assert.NoError(t, err)
-	assert.Zero(t, response.Data.ID)
-	assert.Equal(t, "TobbyMax", response.Data.Nickname)
-	assert.Equal(t, "agemax@gmail.com", response.Data.Email)
+	response, err = suite.Client.getUser(response.Data.ID)
+	suite.NoError(err)
+	suite.Zero(response.Data.ID)
+	suite.Equal("TobbyMax", response.Data.Nickname)
+	suite.Equal("agemax@gmail.com", response.Data.Email)
 }
 
-func TestGetUser_NonExistentID(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestGetUser_NonExistentID() {
+	_, err := suite.Client.createUser("MacMiller", "blue_slide_park@hotmail.com")
+	suite.NoError(err)
 
-	_, err := client.createUser("MacMiller", "blue_slide_park@hotmail.com")
-	assert.NoError(t, err)
-
-	_, err = client.getUser(1)
-	assert.ErrorIs(t, err, ErrNotFound)
+	_, err = suite.Client.getUser(1)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
-func TestUpdateUser(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestUpdateUser() {
+	response, err := suite.Client.createUser("MacMiller", "swimming@circles.com")
+	suite.NoError(err)
 
-	response, err := client.createUser("MacMiller", "swimming@circles.com")
-	assert.NoError(t, err)
-
-	response, err = client.updateUser(response.Data.ID, "MacMiller", "the_divine2016@feminine.ru")
-	assert.NoError(t, err)
-	assert.Equal(t, "MacMiller", response.Data.Nickname)
-	assert.Equal(t, "the_divine2016@feminine.ru", response.Data.Email)
+	response, err = suite.Client.updateUser(response.Data.ID, "MacMiller", "the_divine2016@feminine.ru")
+	suite.NoError(err)
+	suite.Equal("MacMiller", response.Data.Nickname)
+	suite.Equal("the_divine2016@feminine.ru", response.Data.Email)
 }
 
-func TestUpdateUser_InvalidEmail(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestUpdateUser_InvalidEmail() {
+	response, err := suite.Client.createUser("MacMiller", "swimming@circles.com")
+	suite.NoError(err)
 
-	response, err := client.createUser("MacMiller", "swimming@circles.com")
-	assert.NoError(t, err)
-
-	response, err = client.updateUser(response.Data.ID, "MacMiller", "good_am.ru")
-	assert.ErrorIs(t, err, ErrBadRequest)
+	response, err = suite.Client.updateUser(response.Data.ID, "MacMiller", "good_am.ru")
+	suite.ErrorIs(err, ErrBadRequest)
 }
 
-func TestCreateUser_ID(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestCreateUser_ID() {
+	resp, err := suite.Client.createUser("Mac Miller", "swimming@circles.com")
+	suite.NoError(err)
+	suite.Equal(resp.Data.ID, int64(0))
 
-	resp, err := client.createUser("Mac Miller", "swimming@circles.com")
-	assert.NoError(t, err)
-	assert.Equal(t, resp.Data.ID, int64(0))
+	resp, err = suite.Client.createUser("Mac Miller", "swimming@circles.com")
+	suite.NoError(err)
+	suite.Equal(resp.Data.ID, int64(1))
 
-	resp, err = client.createUser("Mac Miller", "swimming@circles.com")
-	assert.NoError(t, err)
-	assert.Equal(t, resp.Data.ID, int64(1))
-
-	resp, err = client.createUser("Mac Miller", "swimming@circles.com")
-	assert.NoError(t, err)
-	assert.Equal(t, resp.Data.ID, int64(2))
+	resp, err = suite.Client.createUser("Mac Miller", "swimming@circles.com")
+	suite.NoError(err)
+	suite.Equal(resp.Data.ID, int64(2))
 }
 
-func TestDeleteUser(t *testing.T) {
-	client := getTestClient()
+func (suite *HTTPSuite) TestDeleteUser() {
+	user1, err := suite.Client.createUser("Mac Miller", "swimming@circles.com")
+	suite.NoError(err)
 
-	user1, err := client.createUser("Mac Miller", "swimming@circles.com")
-	assert.NoError(t, err)
+	ad1, err := suite.Client.createAd(user1.Data.ID, "Good News", "Dang!")
+	suite.NoError(err)
 
-	ad1, err := client.createAd(user1.Data.ID, "Good News", "Dang!")
-	assert.NoError(t, err)
+	_, err = suite.Client.createUser("Mac Miller", "swimming@circles.com")
+	suite.NoError(err)
 
-	_, err = client.createUser("Mac Miller", "swimming@circles.com")
-	assert.NoError(t, err)
+	_, err = suite.Client.deleteUser(user1.Data.ID)
+	suite.NoError(err)
 
-	_, err = client.deleteUser(user1.Data.ID)
-	assert.NoError(t, err)
+	_, err = suite.Client.getUser(user1.Data.ID)
+	suite.Error(err)
+	suite.ErrorIs(ErrNotFound, err)
 
-	_, err = client.getUser(user1.Data.ID)
-	assert.Error(t, err)
-	assert.ErrorIs(t, ErrNotFound, err)
-
-	_, err = client.getAd(ad1.Data.ID)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrNotFound)
+	_, err = suite.Client.getAd(ad1.Data.ID)
+	suite.Error(err)
+	suite.ErrorIs(err, ErrNotFound)
 }

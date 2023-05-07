@@ -1,421 +1,96 @@
 package tests
 
 import (
-	"context"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
-	"homework10/internal/adapters/adrepo"
-	"homework10/internal/app"
 	grpcPort "homework10/internal/ports/grpc"
-	"net"
 	"strings"
-	"testing"
-	"time"
 )
 
-func TestGRPCCreateUser_InvalidEmail(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCCreateUser_InvalidEmail() {
+	_, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "abc"})
+	suite.Error(err, "suite.Client.GetUser")
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	_, err = client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "Oleg", Email: "abc"})
-	assert.Error(t, err, "client.GetUser")
-
-	assert.Equal(t, ErrInvalidEmail.Error(), err.Error())
+	suite.Equal(ErrInvalidEmail.Error(), err.Error())
 }
 
-func TestGRPCUpdateUser_InvalidEmail(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCUpdateUser_InvalidEmail() {
+	res, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "MacMiller", Email: "swimming@circles.com"})
+	suite.NoError(err)
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "MacMiller", Email: "swimming@circles.com"})
-	assert.NoError(t, err)
-
-	_, err = client.UpdateUser(ctx, &grpcPort.UpdateUserRequest{Id: &res.Id, Name: "MacMiller", Email: "good_am.ru"})
-	assert.Error(t, err)
-	assert.Equal(t, ErrInvalidEmail.Error(), err.Error())
+	_, err = suite.Client.UpdateUser(suite.Context, &grpcPort.UpdateUserRequest{Id: &res.Id, Name: "MacMiller", Email: "good_am.ru"})
+	suite.Error(err)
+	suite.Equal(ErrInvalidEmail.Error(), err.Error())
 }
 
-func TestGRPCCreateAd_EmptyTitle(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCCreateAd_EmptyTitle() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
-
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "", Text: "Hill Drive", UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: "", Text: "Hill Drive", UserId: &user1.Id})
+	suite.Error(err)
 }
 
-func TestGRPCCreateAd_TooLongTitle(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
-
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
+func (suite *GRPCSuite) TestGRPCCreateAd_TooLongTitle() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
 	text := strings.Repeat("a", 101)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: text, Text: "Hill Drive", UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: text, Text: "Hill Drive", UserId: &user1.Id})
+	suite.Error(err)
 }
 
-func TestGRPCCreateAd_TooLongText(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
-
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
+func (suite *GRPCSuite) TestGRPCCreateAd_TooLongText() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
 	text := strings.Repeat("a", 501)
 
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: text, UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: "Forest", Text: text, UserId: &user1.Id})
+	suite.Error(err)
 }
 
-func TestGRPCUpdateAd_EmptyTitle(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCUpdateAd_EmptyTitle() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
+	suite.NoError(err)
 
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
-
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
-	assert.NoError(t, err)
-
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "", Text: "Hill Drive", UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.UpdateAd(suite.Context, &grpcPort.UpdateAdRequest{Title: "", Text: "Hill Drive", UserId: &user1.Id})
+	suite.Error(err)
 }
 
-func TestGRPCUpdateAd_TooLongTitle(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCUpdateAd_TooLongTitle() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
-
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
-	assert.NoError(t, err)
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
+	suite.NoError(err)
 	text := strings.Repeat("a", 101)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: text, Text: "Hill Drive", UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.UpdateAd(suite.Context, &grpcPort.UpdateAdRequest{Title: text, Text: "Hill Drive", UserId: &user1.Id})
+	suite.Error(err)
 }
 
-func TestGRPCUpdateAd_EmptyText(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCUpdateAd_EmptyText() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
+	suite.NoError(err)
 
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
-
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
-	assert.NoError(t, err)
-
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: "", UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.UpdateAd(suite.Context, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: "", UserId: &user1.Id})
+	suite.Error(err)
 }
 
-func TestGRPCUpdateAd_TooLongText(t *testing.T) {
-	lis := bufconn.Listen(1024 * 1024)
-	t.Cleanup(func() {
-		lis.Close()
-	})
+func (suite *GRPCSuite) TestGRPCUpdateAd_TooLongText() {
+	user1, err := suite.Client.CreateUser(suite.Context, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
+	suite.NoError(err)
 
-	srv := grpc.NewServer()
-	t.Cleanup(func() {
-		srv.Stop()
-	})
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
-	grpcPort.RegisterAdServiceServer(srv, svc)
-
-	go func() {
-		assert.NoError(t, srv.Serve(lis), "srv.Serve")
-	}()
-
-	dialer := func(context.Context, string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	t.Cleanup(func() {
-		cancel()
-	})
-
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	assert.NoError(t, err, "grpc.DialContext")
-
-	t.Cleanup(func() {
-		conn.Close()
-	})
-
-	client := grpcPort.NewAdServiceClient(conn)
-	user1, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Name: "J.Cole", Email: "foresthill@drive.com"})
-	assert.NoError(t, err)
-
-	_, err = client.CreateAd(ctx, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
-	assert.NoError(t, err)
+	_, err = suite.Client.CreateAd(suite.Context, &grpcPort.CreateAdRequest{Title: "Forest", Text: "Hill Drive", UserId: &user1.Id})
+	suite.NoError(err)
 	text := strings.Repeat("a", 501)
 
-	_, err = client.UpdateAd(ctx, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: text, UserId: &user1.Id})
-	assert.Error(t, err)
+	_, err = suite.Client.UpdateAd(suite.Context, &grpcPort.UpdateAdRequest{Title: "Hill Drive", Text: text, UserId: &user1.Id})
+	suite.Error(err)
 }

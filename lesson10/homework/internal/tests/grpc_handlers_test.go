@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-type GRPCSuite struct {
+type GRPCMockSuite struct {
 	suite.Suite
 	App     *mocks.App
 	Client  grpcPort.AdServiceClient
@@ -30,7 +30,7 @@ type GRPCSuite struct {
 	Lis     *bufconn.Listener
 }
 
-func (suite *GRPCSuite) SetupSuite() {
+func (suite *GRPCMockSuite) SetupSuite() {
 	log.Println("Setting Up Suite")
 
 	suite.App = mocks.NewApp(suite.T())
@@ -59,7 +59,7 @@ func (suite *GRPCSuite) SetupSuite() {
 	suite.Conn = conn
 }
 
-func (suite *GRPCSuite) TearDownSuite() {
+func (suite *GRPCMockSuite) TearDownSuite() {
 	log.Println("Tearing Down Suite")
 
 	err := suite.Conn.Close()
@@ -74,12 +74,12 @@ func (suite *GRPCSuite) TearDownSuite() {
 	}
 }
 
-func (suite *GRPCSuite) SetupTest() {
+func (suite *GRPCMockSuite) SetupTest() {
 	log.Println("Setting Up Test")
 	suite.Client = grpcPort.NewAdServiceClient(suite.Conn)
 }
 
-func (suite *GRPCSuite) TestHandler_CreateUser() {
+func (suite *GRPCMockSuite) TestHandler_CreateUser() {
 	type args struct {
 		nickname string
 		email    string
@@ -158,7 +158,7 @@ func (suite *GRPCSuite) TestHandler_CreateUser() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_GetUser() {
+func (suite *GRPCMockSuite) TestHandler_GetUser() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -240,7 +240,7 @@ func (suite *GRPCSuite) TestHandler_GetUser() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_UpdateUser() {
+func (suite *GRPCMockSuite) TestHandler_UpdateUser() {
 	type args struct {
 		badReq   bool
 		id       int64
@@ -356,7 +356,7 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_DeleteUser() {
+func (suite *GRPCMockSuite) TestHandler_DeleteUser() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -432,7 +432,7 @@ func (suite *GRPCSuite) TestHandler_DeleteUser() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_CreateAd() {
+func (suite *GRPCMockSuite) TestHandler_CreateAd() {
 	type args struct {
 		title  string
 		text   string
@@ -535,7 +535,7 @@ func (suite *GRPCSuite) TestHandler_CreateAd() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_GetAd() {
+func (suite *GRPCMockSuite) TestHandler_GetAd() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -614,7 +614,7 @@ func (suite *GRPCSuite) TestHandler_GetAd() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_UpdateAd() {
+func (suite *GRPCMockSuite) TestHandler_UpdateAd() {
 	type args struct {
 		badReq bool
 		id     int64
@@ -745,7 +745,7 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
+func (suite *GRPCMockSuite) TestHandler_ChangeAdStatus() {
 	type args struct {
 		badId     bool
 		badUid    bool
@@ -865,7 +865,7 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_DeleteAd() {
+func (suite *GRPCMockSuite) TestHandler_DeleteAd() {
 	type args struct {
 		badId  bool
 		badUid bool
@@ -974,7 +974,7 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 	}
 }
 
-func (suite *GRPCSuite) TestHandler_Filter() {
+func (suite *GRPCMockSuite) TestHandler_Filter() {
 	type args struct {
 		date string
 		err  error
@@ -1035,7 +1035,7 @@ func (suite *GRPCSuite) TestHandler_Filter() {
 	}
 }
 
-func (suite *GRPCSuite) TestPanic() {
+func (suite *GRPCMockSuite) TestPanic() {
 	*suite.App = mocks.App{}
 	suite.NotPanics(func() {
 		suite.Client.ListAds(suite.Context,
@@ -1044,5 +1044,5 @@ func (suite *GRPCSuite) TestPanic() {
 }
 
 func TestGRPCHandlers(t *testing.T) {
-	suite.Run(t, new(GRPCSuite))
+	suite.Run(t, new(GRPCMockSuite))
 }

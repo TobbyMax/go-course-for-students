@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"github.com/TobbyMax/validator"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"homework10/internal/ads"
@@ -19,504 +18,406 @@ type AppTestSuite struct {
 	Ctx  context.Context
 }
 
-func (suite *AppTestSuite) SetupSuite() {
+func (suite *AppTestSuite) SetupTest() {
 	suite.Repo = mocks.NewRepository(suite.T())
 	suite.Ctx = context.Background()
 }
 
-func TestApp_CreateAd(t *testing.T) {
-	repo := mocks.NewRepository(t)
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_CreateAd() {
 	id := int64(13)
-	repo.On("AddAd", ctx, mock.AnythingOfType("ads.Ad")).
+	suite.Repo.On("AddAd", suite.Ctx, mock.AnythingOfType("ads.Ad")).
 		Return(id, nil).
 		Once()
-	service := app.NewApp(repo)
-	ad, err := service.CreateAd(ctx, "title", "text", 1)
-	assert.Nil(t, err)
-	assert.Equal(t, id, ad.ID)
-	assert.Equal(t, "title", ad.Title)
-	assert.Equal(t, "text", ad.Text)
-	assert.Equal(t, int64(1), ad.AuthorID)
+	service := app.NewApp(suite.Repo)
+	ad, err := service.CreateAd(suite.Ctx, "title", "text", 1)
+	suite.Nil(err)
+	suite.Equal(id, ad.ID)
+	suite.Equal("title", ad.Title)
+	suite.Equal("text", ad.Text)
+	suite.Equal(int64(1), ad.AuthorID)
 }
 
-func TestApp_CreateAd_NonExistentUser(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_CreateAd_NonExistentUser() {
 	id := int64(13)
-	repo.On("AddAd", ctx, mock.AnythingOfType("ads.Ad")).
+	suite.Repo.On("AddAd", suite.Ctx, mock.AnythingOfType("ads.Ad")).
 		Return(id, app.ErrUserNotFound).
 		Once()
-	service := app.NewApp(repo)
-	_, err := service.CreateAd(ctx, "title", "text", 1)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrUserNotFound)
+	service := app.NewApp(suite.Repo)
+	_, err := service.CreateAd(suite.Ctx, "title", "text", 1)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrUserNotFound)
 }
 
-func TestApp_GetAd(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
-	repo.On("GetAdByID", ctx, int64(0)).
+func (suite *AppTestSuite) TestApp_GetAd() {
+	suite.Repo.On("GetAdByID", suite.Ctx, int64(0)).
 		Return(&ads.Ad{}, nil).
 		Once()
-	service := app.NewApp(repo)
-	ad, err := service.GetAd(ctx, 0)
-	assert.Nil(t, err)
-	assert.Equal(t, ads.Ad{}, *ad)
+	service := app.NewApp(suite.Repo)
+	ad, err := service.GetAd(suite.Ctx, 0)
+	suite.Nil(err)
+	suite.Equal(ads.Ad{}, *ad)
 }
 
-func TestApp_CreateAd_InvalidTitle(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
-	id := int64(13)
-	repo.On("AddAd", ctx, mock.AnythingOfType("ads.Ad")).
-		Return(id, nil).
-		Once()
-	service := app.NewApp(repo)
-	_, err := service.CreateAd(ctx, "", "text", 1)
-	assert.Error(t, err)
+func (suite *AppTestSuite) TestApp_CreateAd_InvalidTitle() {
+	service := app.NewApp(suite.Repo)
+	_, err := service.CreateAd(suite.Ctx, "", "text", 1)
+	suite.Error(err)
 	e := &validator.ValidationErrors{}
-	assert.ErrorAs(t, err, e)
+	suite.ErrorAs(err, e)
 }
 
-func TestApp_CreateAd_InvalidText(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
-	id := int64(13)
-	repo.On("AddAd", ctx, mock.AnythingOfType("ads.Ad")).
-		Return(id, nil).
-		Once()
-	service := app.NewApp(repo)
-	_, err := service.CreateAd(ctx, "title", "", 1)
-	assert.Error(t, err)
+func (suite *AppTestSuite) TestApp_CreateAd_InvalidText() {
+	service := app.NewApp(suite.Repo)
+	_, err := service.CreateAd(suite.Ctx, "title", "", 1)
+	suite.Error(err)
 	e := &validator.ValidationErrors{}
-	assert.ErrorAs(t, err, e)
+	suite.ErrorAs(err, e)
 }
 
-func TestApp_UpdateAd(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateAd() {
 	id := int64(0)
 	title := "title"
 	text := "text"
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 1}, nil).
 		Once()
-	repo.On("UpdateAdContent", ctx, id, title, text, mock.AnythingOfType("time.Time")).
+	suite.Repo.On("UpdateAdContent", suite.Ctx, id, title, text, mock.AnythingOfType("time.Time")).
 		Return(nil).
 		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateAd(ctx, id, int64(1), title, text)
-	assert.Nil(t, err)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateAd(suite.Ctx, id, int64(1), title, text)
+	suite.Nil(err)
 }
 
-func TestApp_UpdateAd_NonExistentAd(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateAd_NonExistentAd() {
 	id := int64(0)
 	title := "title"
 	text := "text"
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(nil, app.ErrAdNotFound).
 		Once()
-	repo.On("UpdateAdContent", ctx, id, title, text, mock.AnythingOfType("time.Time")).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateAd(ctx, id, int64(1), title, text)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrAdNotFound)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateAd(suite.Ctx, id, int64(1), title, text)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrAdNotFound)
 }
 
-func TestApp_UpdateAd_Forbidden(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateAd_Forbidden() {
 	id := int64(0)
 	title := "title"
 	text := "text"
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 0}, nil).
 		Once()
-	repo.On("UpdateAdContent", ctx, id, title, text, mock.AnythingOfType("time.Time")).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateAd(ctx, id, int64(1), title, text)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrForbidden)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateAd(suite.Ctx, id, int64(1), title, text)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrForbidden)
 }
 
-func TestApp_UpdateAd_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateAd_RepoError() {
 	id := int64(0)
 	title := "title"
 	text := "text"
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 1}, nil).
 		Once()
-	repo.On("UpdateAdContent", ctx, id, title, text, mock.AnythingOfType("time.Time")).
+	suite.Repo.On("UpdateAdContent", suite.Ctx, id, title, text, mock.AnythingOfType("time.Time")).
 		Return(ErrMock).
 		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateAd(ctx, id, int64(1), title, text)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrMock)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateAd(suite.Ctx, id, int64(1), title, text)
+	suite.Error(err)
+	suite.ErrorIs(err, ErrMock)
 }
 
-func TestApp_ChangeAdStatus(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ChangeAdStatus() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 1}, nil).
 		Once()
-	repo.On("UpdateAdStatus", ctx, id, true, mock.AnythingOfType("time.Time")).
+	suite.Repo.On("UpdateAdStatus", suite.Ctx, id, true, mock.AnythingOfType("time.Time")).
 		Return(nil).
 		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.ChangeAdStatus(ctx, id, int64(1), true)
-	assert.Nil(t, err)
+	service := app.NewApp(suite.Repo)
+	_, err := service.ChangeAdStatus(suite.Ctx, id, int64(1), true)
+	suite.Nil(err)
 }
 
-func TestApp_ChangeAdStatus_NonExistentAd(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ChangeAdStatus_NonExistentAd() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(nil, app.ErrAdNotFound).
 		Once()
-	repo.On("UpdateAdStatus", ctx, id, true, mock.AnythingOfType("time.Time")).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.ChangeAdStatus(ctx, id, int64(1), true)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrAdNotFound)
+	service := app.NewApp(suite.Repo)
+	_, err := service.ChangeAdStatus(suite.Ctx, id, int64(1), true)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrAdNotFound)
 }
 
-func TestApp_ChangeAdStatus_Forbidden(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ChangeAdStatus_Forbidden() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 0}, nil).
 		Once()
-	repo.On("UpdateAdStatus", ctx, id, true, mock.AnythingOfType("time.Time")).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.ChangeAdStatus(ctx, id, int64(1), true)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrForbidden)
+	service := app.NewApp(suite.Repo)
+	_, err := service.ChangeAdStatus(suite.Ctx, id, int64(1), true)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrForbidden)
 }
 
-func TestApp_ChangeAdStatus_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ChangeAdStatus_RepoError() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 1}, nil).
 		Once()
-	repo.On("UpdateAdStatus", ctx, id, true, mock.AnythingOfType("time.Time")).
+	suite.Repo.On("UpdateAdStatus", suite.Ctx, id, true, mock.AnythingOfType("time.Time")).
 		Return(ErrMock).
 		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.ChangeAdStatus(ctx, id, int64(1), true)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrMock)
+	service := app.NewApp(suite.Repo)
+	_, err := service.ChangeAdStatus(suite.Ctx, id, int64(1), true)
+	suite.Error(err)
+	suite.ErrorIs(err, ErrMock)
 }
 
-func TestApp_ListAds(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ListAds() {
 	pub := true
 	params := app.ListAdsParams{Published: &pub}
-	repo.On("GetAdList", ctx, params).
+	suite.Repo.On("GetAdList", suite.Ctx, params).
 		Return(nil, nil).
 		Once()
 
-	service := app.NewApp(repo)
-	al, err := service.ListAds(ctx, params)
-	assert.Nil(t, err)
-	assert.Nil(t, al)
+	service := app.NewApp(suite.Repo)
+	al, err := service.ListAds(suite.Ctx, params)
+	suite.Nil(err)
+	suite.Nil(al)
 }
 
-func TestApp_ListAds_AllNil(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ListAds_AllNil() {
 	params := app.ListAdsParams{}
 	pub := true
-	repo.On("GetAdList", ctx, app.ListAdsParams{Published: &pub}).
+	suite.Repo.On("GetAdList", suite.Ctx, app.ListAdsParams{Published: &pub}).
 		Return(nil, nil).
 		Once()
 
-	service := app.NewApp(repo)
-	al, err := service.ListAds(ctx, params)
-	assert.Nil(t, err)
-	assert.Nil(t, al)
+	service := app.NewApp(suite.Repo)
+	al, err := service.ListAds(suite.Ctx, params)
+	suite.Nil(err)
+	suite.Nil(al)
 }
 
-func TestApp_ListAds_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_ListAds_RepoError() {
 	params := app.ListAdsParams{}
 	pub := true
-	repo.On("GetAdList", ctx, app.ListAdsParams{Published: &pub}).
+	suite.Repo.On("GetAdList", suite.Ctx, app.ListAdsParams{Published: &pub}).
 		Return(nil, ErrMock).
 		Once()
 
-	service := app.NewApp(repo)
-	al, err := service.ListAds(ctx, params)
-	assert.Nil(t, al)
-	assert.ErrorIs(t, err, ErrMock)
+	service := app.NewApp(suite.Repo)
+	al, err := service.ListAds(suite.Ctx, params)
+	suite.Nil(al)
+	suite.ErrorIs(err, ErrMock)
 }
 
-func TestApp_CreateUser(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_CreateUser() {
 	id := int64(13)
-	repo.On("AddUser", ctx, mock.AnythingOfType("user.User")).
+	suite.Repo.On("AddUser", suite.Ctx, mock.AnythingOfType("user.User")).
 		Return(id, nil).
 		Once()
-	service := app.NewApp(repo)
-	u, err := service.CreateUser(ctx, "Mac Miller", "swimming@circles.com")
-	assert.Nil(t, err)
-	assert.Equal(t, id, u.ID)
-	assert.Equal(t, "Mac Miller", u.Nickname)
-	assert.Equal(t, "swimming@circles.com", u.Email)
+	service := app.NewApp(suite.Repo)
+	u, err := service.CreateUser(suite.Ctx, "Mac Miller", "swimming@circles.com")
+	suite.Nil(err)
+	suite.Equal(id, u.ID)
+	suite.Equal("Mac Miller", u.Nickname)
+	suite.Equal("swimming@circles.com", u.Email)
 }
 
-func TestApp_GetUser(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
-	repo.On("GetUserByID", ctx, int64(0)).
+func (suite *AppTestSuite) TestApp_GetUser() {
+	suite.Repo.On("GetUserByID", suite.Ctx, int64(0)).
 		Return(nil, nil).
 		Once()
-	service := app.NewApp(repo)
-	u, err := service.GetUser(ctx, 0)
-	assert.Nil(t, err)
-	assert.Nil(t, u)
+	service := app.NewApp(suite.Repo)
+	u, err := service.GetUser(suite.Ctx, 0)
+	suite.Nil(err)
+	suite.Nil(u)
 }
 
-func TestApp_CreateUser_InvalidName(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
-	id := int64(13)
-	repo.On("AddUser", ctx, mock.AnythingOfType("user.User")).
-		Return(id, nil).
-		Once()
-	service := app.NewApp(repo)
-	u, err := service.CreateUser(ctx, "", "swimming@circles.com")
-	assert.Error(t, err)
+func (suite *AppTestSuite) TestApp_CreateUser_InvalidName() {
+	service := app.NewApp(suite.Repo)
+	u, err := service.CreateUser(suite.Ctx, "", "swimming@circles.com")
+	suite.Error(err)
 	e := &validator.ValidationErrors{}
-	assert.ErrorAs(t, err, e)
-	assert.Nil(t, u)
+	suite.ErrorAs(err, e)
+	suite.Nil(u)
 }
 
-func TestApp_CreateUser_InvalidEmail(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
-	id := int64(13)
-	repo.On("AddUser", ctx, mock.AnythingOfType("user.User")).
-		Return(id, nil).
-		Once()
-	service := app.NewApp(repo)
-	u, err := service.CreateUser(ctx, "Mac", "")
-	assert.Error(t, err)
+func (suite *AppTestSuite) TestApp_CreateUser_InvalidEmail() {
+	service := app.NewApp(suite.Repo)
+	u, err := service.CreateUser(suite.Ctx, "Mac", "")
+	suite.Error(err)
 	e := &validator.ValidationErrors{}
-	assert.ErrorAs(t, err, e)
-	assert.Nil(t, u)
+	suite.ErrorAs(err, e)
+	suite.Nil(u)
 }
 
-func TestApp_CreateUser_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_CreateUser_RepoError() {
 	id := int64(13)
-	repo.On("AddUser", ctx, mock.AnythingOfType("user.User")).
+	suite.Repo.On("AddUser", suite.Ctx, mock.AnythingOfType("user.User")).
 		Return(id, ErrMock).
 		Once()
-	service := app.NewApp(repo)
-	u, err := service.CreateUser(ctx, "Mac", "swimming@circles.com")
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrMock)
-	assert.Nil(t, u)
+	service := app.NewApp(suite.Repo)
+	u, err := service.CreateUser(suite.Ctx, "Mac", "swimming@circles.com")
+	suite.Error(err)
+	suite.ErrorIs(err, ErrMock)
+	suite.Nil(u)
 }
 
-func TestApp_UpdateUser(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateUser() {
 	id := int64(0)
 	name := "Mac Miller"
 	email := "swimming@circles.com"
-	repo.On("GetUserByID", ctx, id).
+	suite.Repo.On("GetUserByID", suite.Ctx, id).
 		Return(&user.User{}, nil).
 		Once()
-	repo.On("UpdateUser", ctx, id, name, email).
+	suite.Repo.On("UpdateUser", suite.Ctx, id, name, email).
 		Return(nil).
 		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateUser(ctx, id, name, email)
-	assert.Nil(t, err)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateUser(suite.Ctx, id, name, email)
+	suite.Nil(err)
 }
 
-func TestApp_UpdateUser_NonExistentID(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateUser_NonExistentID() {
 	id := int64(0)
 	name := "Mac Miller"
 	email := "swimming@circles.com"
-	repo.On("GetUserByID", ctx, id).
+	suite.Repo.On("GetUserByID", suite.Ctx, id).
 		Return(nil, app.ErrUserNotFound).
 		Once()
-	repo.On("UpdateUser", ctx, id, name, email).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateUser(ctx, id, name, email)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrUserNotFound)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateUser(suite.Ctx, id, name, email)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrUserNotFound)
 }
 
-func TestApp_UpdateUser_InvalidName(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateUser_InvalidName() {
 	id := int64(0)
 	name := ""
 	email := "swimming@circles.com"
-	repo.On("GetUserByID", ctx, id).
+	suite.Repo.On("GetUserByID", suite.Ctx, id).
 		Return(&user.User{}, nil).
 		Once()
-	repo.On("UpdateUser", ctx, id, name, email).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateUser(ctx, id, name, email)
-	assert.Error(t, err)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateUser(suite.Ctx, id, name, email)
+	suite.Error(err)
 	e := &validator.ValidationErrors{}
-	assert.ErrorAs(t, err, e)
+	suite.ErrorAs(err, e)
 }
 
-func TestApp_UpdateUser_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_UpdateUser_RepoError() {
 	id := int64(0)
 	name := "Mac Miller"
 	email := "swimming@circles.com"
-	repo.On("GetUserByID", ctx, id).
+	suite.Repo.On("GetUserByID", suite.Ctx, id).
 		Return(&user.User{}, nil).
 		Once()
-	repo.On("UpdateUser", ctx, id, name, email).
+	suite.Repo.On("UpdateUser", suite.Ctx, id, name, email).
 		Return(ErrMock).
 		Once()
 
-	service := app.NewApp(repo)
-	_, err := service.UpdateUser(ctx, id, name, email)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrMock)
+	service := app.NewApp(suite.Repo)
+	_, err := service.UpdateUser(suite.Ctx, id, name, email)
+	suite.Error(err)
+	suite.ErrorIs(err, ErrMock)
 }
 
-func TestApp_DeleteUser(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_DeleteUser() {
 	id := int64(0)
-	repo.On("DeleteUserByID", ctx, id).
+	suite.Repo.On("DeleteUserByID", suite.Ctx, id).
 		Return(nil).
 		Once()
 
-	service := app.NewApp(repo)
-	err := service.DeleteUser(ctx, id)
-	assert.Nil(t, err)
+	service := app.NewApp(suite.Repo)
+	err := service.DeleteUser(suite.Ctx, id)
+	suite.Nil(err)
 }
 
-func TestApp_DeleteUser_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_DeleteUser_RepoError() {
 	id := int64(0)
-	repo.On("DeleteUserByID", ctx, id).
+	suite.Repo.On("DeleteUserByID", suite.Ctx, id).
 		Return(ErrMock).
 		Once()
 
-	service := app.NewApp(repo)
-	err := service.DeleteUser(ctx, id)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrMock)
+	service := app.NewApp(suite.Repo)
+	err := service.DeleteUser(suite.Ctx, id)
+	suite.Error(err)
+	suite.ErrorIs(err, ErrMock)
 }
 
-func TestApp_DeleteAd(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_DeleteAd() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 1}, nil).
 		Once()
-	repo.On("DeleteAdByID", ctx, id).
+	suite.Repo.On("DeleteAdByID", suite.Ctx, id).
 		Return(nil).
 		Once()
 
-	service := app.NewApp(repo)
-	err := service.DeleteAd(ctx, id, 1)
-	assert.Nil(t, err)
+	service := app.NewApp(suite.Repo)
+	err := service.DeleteAd(suite.Ctx, id, 1)
+	suite.Nil(err)
 }
 
-func TestApp_DeleteAd_Forbidden(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_DeleteAd_Forbidden() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 0}, nil).
 		Once()
-	repo.On("DeleteAdByID", ctx, id).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	err := service.DeleteAd(ctx, id, 1)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrForbidden)
+	service := app.NewApp(suite.Repo)
+	err := service.DeleteAd(suite.Ctx, id, 1)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrForbidden)
 }
 
-func TestApp_DeleteAd_NonExistentAd(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_DeleteAd_NonExistentAd() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(nil, app.ErrAdNotFound).
 		Once()
-	repo.On("DeleteAdByID", ctx, id).
-		Return(nil).
-		Once()
 
-	service := app.NewApp(repo)
-	err := service.DeleteAd(ctx, id, 1)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, app.ErrAdNotFound)
+	service := app.NewApp(suite.Repo)
+	err := service.DeleteAd(suite.Ctx, id, 1)
+	suite.Error(err)
+	suite.ErrorIs(err, app.ErrAdNotFound)
 }
 
-func TestApp_DeleteAd_RepoError(t *testing.T) {
-	repo := &mocks.Repository{}
-	ctx := context.Background()
+func (suite *AppTestSuite) TestApp_DeleteAd_RepoError() {
 	id := int64(0)
-	repo.On("GetAdByID", ctx, id).
+	suite.Repo.On("GetAdByID", suite.Ctx, id).
 		Return(&ads.Ad{AuthorID: 1}, nil).
 		Once()
-	repo.On("DeleteAdByID", ctx, id).
+	suite.Repo.On("DeleteAdByID", suite.Ctx, id).
 		Return(ErrMock).
 		Once()
 
-	service := app.NewApp(repo)
-	err := service.DeleteAd(ctx, id, 1)
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, ErrMock)
+	service := app.NewApp(suite.Repo)
+	err := service.DeleteAd(suite.Ctx, id, 1)
+	suite.Error(err)
+	suite.ErrorIs(err, ErrMock)
+}
+
+func TestAppSuite(t *testing.T) {
+	suite.Run(t, new(AppTestSuite))
 }
