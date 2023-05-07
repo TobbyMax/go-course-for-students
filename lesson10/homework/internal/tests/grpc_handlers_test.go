@@ -33,7 +33,7 @@ type GRPCSuite struct {
 func (suite *GRPCSuite) SetupSuite() {
 	log.Println("Setting Up Suite")
 
-	suite.App = &mocks.App{}
+	suite.App = mocks.NewApp(suite.T())
 
 	suite.Lis = bufconn.Listen(1024 * 1024)
 	suite.Server = grpc.NewServer(grpc.ChainUnaryInterceptor(
@@ -88,6 +88,7 @@ func (suite *GRPCSuite) TestHandler_CreateUser() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -97,7 +98,8 @@ func (suite *GRPCSuite) TestHandler_CreateUser() {
 				nickname: "Mac Miller",
 				email:    "swimming@circles.com",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "invalid email",
@@ -115,6 +117,7 @@ func (suite *GRPCSuite) TestHandler_CreateUser() {
 				email:    "swimming@circles.com",
 				err:      validator.ValidationErrors{},
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrValidationMock,
 		},
@@ -125,18 +128,21 @@ func (suite *GRPCSuite) TestHandler_CreateUser() {
 				email:    "swimming@circles.com",
 				err:      ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("CreateUser",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.nickname, tc.args.email,
-			).
-				Return(&user.User{Nickname: tc.args.nickname, Email: tc.args.email}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("CreateUser",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.nickname, tc.args.email,
+				).
+					Return(&user.User{Nickname: tc.args.nickname, Email: tc.args.email}, tc.args.err).
+					Once()
+			}
 			response, err := suite.Client.CreateUser(suite.Context,
 				&grpcPort.CreateUserRequest{Name: tc.args.nickname, Email: tc.args.email})
 			if tc.wantErr {
@@ -161,6 +167,7 @@ func (suite *GRPCSuite) TestHandler_GetUser() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -169,7 +176,8 @@ func (suite *GRPCSuite) TestHandler_GetUser() {
 			args: args{
 				id: 1,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "bad request",
@@ -185,6 +193,7 @@ func (suite *GRPCSuite) TestHandler_GetUser() {
 				id:  1,
 				err: app.ErrUserNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrUserNotFound,
 		},
@@ -194,18 +203,21 @@ func (suite *GRPCSuite) TestHandler_GetUser() {
 				id:  1,
 				err: ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("GetUser",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.id,
-			).
-				Return(&user.User{ID: tc.args.id, Nickname: "Mac Miller", Email: "swimming@circles.com"}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("GetUser",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.id,
+				).
+					Return(&user.User{ID: tc.args.id, Nickname: "Mac Miller", Email: "swimming@circles.com"}, tc.args.err).
+					Once()
+			}
 			var (
 				response *grpcPort.UserResponse
 				err      error
@@ -239,6 +251,7 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -249,7 +262,8 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 				nickname: "Mac Miller",
 				email:    "swimming@circles.com",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "validation error",
@@ -259,6 +273,7 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 				email:    "swimming@circles.com",
 				err:      validator.ValidationErrors{},
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrValidationMock,
 		},
@@ -270,6 +285,7 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 				email:    "swimming@circles.com",
 				err:      app.ErrUserNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrUserNotFound,
 		},
@@ -281,6 +297,7 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 				email:    "swimming@circles.com",
 				err:      ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
@@ -308,12 +325,14 @@ func (suite *GRPCSuite) TestHandler_UpdateUser() {
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
 			id, name, email, e := tc.args.id, tc.args.nickname, tc.args.email, tc.args.err
-			suite.App.On("UpdateUser",
-				mock.AnythingOfType("*context.valueCtx"),
-				id, name, email,
-			).
-				Return(&user.User{ID: id, Nickname: name, Email: email}, e).
-				Once()
+			if tc.needMock {
+				suite.App.On("UpdateUser",
+					mock.AnythingOfType("*context.valueCtx"),
+					id, name, email,
+				).
+					Return(&user.User{ID: id, Nickname: name, Email: email}, e).
+					Once()
+			}
 			var (
 				response *grpcPort.UserResponse
 				err      error
@@ -346,6 +365,7 @@ func (suite *GRPCSuite) TestHandler_DeleteUser() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -354,7 +374,8 @@ func (suite *GRPCSuite) TestHandler_DeleteUser() {
 			args: args{
 				id: 1,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "bad request",
@@ -370,6 +391,7 @@ func (suite *GRPCSuite) TestHandler_DeleteUser() {
 				id:  1,
 				err: app.ErrUserNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrUserNotFound,
 		},
@@ -379,18 +401,21 @@ func (suite *GRPCSuite) TestHandler_DeleteUser() {
 				id:  1,
 				err: ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("DeleteUser",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.id,
-			).
-				Return(tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("DeleteUser",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.id,
+				).
+					Return(tc.args.err).
+					Once()
+			}
 			var err error
 			if tc.args.badReq {
 				_, err = suite.Client.DeleteUser(suite.Context, &grpcPort.DeleteUserRequest{})
@@ -418,6 +443,7 @@ func (suite *GRPCSuite) TestHandler_CreateAd() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -428,13 +454,15 @@ func (suite *GRPCSuite) TestHandler_CreateAd() {
 				title: "DAMN.",
 				text:  "by Kendrick Lamar",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "failed dependency",
 			args: args{
 				err: app.ErrUserNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrUserNotFound,
 		},
@@ -446,6 +474,7 @@ func (suite *GRPCSuite) TestHandler_CreateAd() {
 				text:  "by Kendrick Lamar",
 				err:   validator.ValidationErrors{},
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrValidationMock,
 		},
@@ -467,18 +496,21 @@ func (suite *GRPCSuite) TestHandler_CreateAd() {
 				text:  "by Kendrick Lamar",
 				err:   ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("CreateAd",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.title, tc.args.text, tc.args.uid,
-			).
-				Return(&ads.Ad{Title: tc.args.title, Text: tc.args.text}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("CreateAd",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.title, tc.args.text, tc.args.uid,
+				).
+					Return(&ads.Ad{Title: tc.args.title, Text: tc.args.text}, tc.args.err).
+					Once()
+			}
 			var (
 				response *grpcPort.AdResponse
 				err      error
@@ -512,6 +544,7 @@ func (suite *GRPCSuite) TestHandler_GetAd() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -520,13 +553,15 @@ func (suite *GRPCSuite) TestHandler_GetAd() {
 			args: args{
 				id: 2009,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "id not found",
 			args: args{
 				err: app.ErrAdNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrAdNotFound,
 		},
@@ -544,18 +579,21 @@ func (suite *GRPCSuite) TestHandler_GetAd() {
 				id:  2009,
 				err: ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("GetAd",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.id,
-			).
-				Return(&ads.Ad{ID: tc.args.id}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("GetAd",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.id,
+				).
+					Return(&ads.Ad{ID: tc.args.id}, tc.args.err).
+					Once()
+			}
 			var (
 				response *grpcPort.AdResponse
 				err      error
@@ -588,6 +626,7 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -599,7 +638,8 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 				text:  "by Kendrick Lamar",
 				uid:   13,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "validation error",
@@ -610,6 +650,7 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   validator.ValidationErrors{},
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrValidationMock,
 		},
@@ -622,6 +663,7 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   app.ErrAdNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrAdNotFound,
 		},
@@ -634,6 +676,7 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   app.ErrForbidden,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrGRPCForbidden,
 		},
@@ -646,6 +689,7 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 				uid:   13,
 				err:   ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
@@ -663,12 +707,14 @@ func (suite *GRPCSuite) TestHandler_UpdateAd() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("UpdateAd",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.id, tc.args.uid, tc.args.title, tc.args.text,
-			).
-				Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Title: tc.args.title, Text: tc.args.text}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("UpdateAd",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.id, tc.args.uid, tc.args.title, tc.args.text,
+				).
+					Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Title: tc.args.title, Text: tc.args.text}, tc.args.err).
+					Once()
+			}
 			var (
 				response *grpcPort.AdResponse
 				err      error
@@ -711,6 +757,7 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -721,7 +768,8 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 				published: true,
 				uid:       13,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "id not found",
@@ -731,6 +779,7 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 				uid:       13,
 				err:       app.ErrAdNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrAdNotFound,
 		},
@@ -742,6 +791,7 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 				uid:       13,
 				err:       app.ErrForbidden,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrGRPCForbidden,
 		},
@@ -753,6 +803,7 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 				uid:       13,
 				err:       ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
@@ -780,12 +831,14 @@ func (suite *GRPCSuite) TestHandler_ChangeAdStatus() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("ChangeAdStatus",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.id, tc.args.uid, tc.args.published,
-			).
-				Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Published: tc.args.published}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("ChangeAdStatus",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.id, tc.args.uid, tc.args.published,
+				).
+					Return(&ads.Ad{ID: tc.args.id, AuthorID: tc.args.uid, Published: tc.args.published}, tc.args.err).
+					Once()
+			}
 			var (
 				response *grpcPort.AdResponse
 				err      error
@@ -823,6 +876,7 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -832,7 +886,8 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 				id:  2009,
 				uid: 13,
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "id not found",
@@ -841,6 +896,7 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 				uid: 13,
 				err: app.ErrAdNotFound,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrAdNotFound,
 		},
@@ -851,6 +907,7 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 				uid: 13,
 				err: app.ErrForbidden,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrGRPCForbidden,
 		},
@@ -861,6 +918,7 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 				uid: 13,
 				err: ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
@@ -887,12 +945,14 @@ func (suite *GRPCSuite) TestHandler_DeleteAd() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("DeleteAd",
-				mock.AnythingOfType("*context.valueCtx"),
-				tc.args.id, tc.args.uid,
-			).
-				Return(tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("DeleteAd",
+					mock.AnythingOfType("*context.valueCtx"),
+					tc.args.id, tc.args.uid,
+				).
+					Return(tc.args.err).
+					Once()
+			}
 			var err error
 			if tc.args.badId {
 				_, err = suite.Client.DeleteAd(suite.Context,
@@ -922,6 +982,7 @@ func (suite *GRPCSuite) TestHandler_Filter() {
 	tests := []struct {
 		name          string
 		args          args
+		needMock      bool
 		wantErr       bool
 		expectedError error
 	}{
@@ -930,7 +991,8 @@ func (suite *GRPCSuite) TestHandler_Filter() {
 			args: args{
 				date: "2018-08-03",
 			},
-			wantErr: false,
+			needMock: true,
+			wantErr:  false,
 		},
 		{
 			name: "internal error",
@@ -938,6 +1000,7 @@ func (suite *GRPCSuite) TestHandler_Filter() {
 				date: "2018-08-03",
 				err:  ErrMock,
 			},
+			needMock:      true,
 			wantErr:       true,
 			expectedError: ErrMockInternal,
 		},
@@ -952,12 +1015,14 @@ func (suite *GRPCSuite) TestHandler_Filter() {
 	}
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			suite.App.On("ListAds",
-				mock.AnythingOfType("*context.valueCtx"),
-				mock.AnythingOfType("app.ListAdsParams"),
-			).
-				Return(&ads.AdList{}, tc.args.err).
-				Once()
+			if tc.needMock {
+				suite.App.On("ListAds",
+					mock.AnythingOfType("*context.valueCtx"),
+					mock.AnythingOfType("app.ListAdsParams"),
+				).
+					Return(&ads.AdList{}, tc.args.err).
+					Once()
+			}
 			_, err := suite.Client.ListAds(suite.Context,
 				&grpcPort.ListAdRequest{Date: &tc.args.date})
 			if tc.wantErr {
@@ -968,6 +1033,14 @@ func (suite *GRPCSuite) TestHandler_Filter() {
 			}
 		})
 	}
+}
+
+func (suite *GRPCSuite) TestPanic() {
+	*suite.App = mocks.App{}
+	suite.NotPanics(func() {
+		suite.Client.ListAds(suite.Context,
+			&grpcPort.ListAdRequest{})
+	})
 }
 
 func TestGRPCHandlers(t *testing.T) {

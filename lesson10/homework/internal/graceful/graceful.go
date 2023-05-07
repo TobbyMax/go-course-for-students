@@ -9,8 +9,7 @@ import (
 	"syscall"
 )
 
-func CaptureSignal(ctx context.Context) func() error {
-	sigQuit := make(chan os.Signal, 1)
+func CaptureSignal(ctx context.Context, sigQuit chan os.Signal) func() error {
 	signal.Ignore(syscall.SIGHUP, syscall.SIGPIPE)
 	signal.Notify(sigQuit, syscall.SIGINT, syscall.SIGTERM)
 	return func() error {

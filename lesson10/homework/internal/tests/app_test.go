@@ -5,12 +5,24 @@ import (
 	"github.com/TobbyMax/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 	"homework10/internal/ads"
 	"homework10/internal/app"
 	"homework10/internal/tests/mocks"
 	"homework10/internal/user"
 	"testing"
 )
+
+type AppTestSuite struct {
+	suite.Suite
+	Repo *mocks.Repository
+	Ctx  context.Context
+}
+
+func (suite *AppTestSuite) SetupSuite() {
+	suite.Repo = mocks.NewRepository(suite.T())
+	suite.Ctx = context.Background()
+}
 
 func TestApp_CreateAd(t *testing.T) {
 	repo := mocks.NewRepository(t)

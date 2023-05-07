@@ -9,6 +9,7 @@ import (
 	"homework10/internal/graceful"
 	grpcSvc "homework10/internal/ports/grpc"
 	"homework10/internal/ports/httpgin"
+	"os"
 
 	"log"
 	"net"
@@ -38,7 +39,8 @@ func main() {
 
 	eg, ctx := errgroup.WithContext(context.Background())
 
-	eg.Go(graceful.CaptureSignal(ctx))
+	sigQuit := make(chan os.Signal, 1)
+	eg.Go(graceful.CaptureSignal(ctx, sigQuit))
 	// run grpc server
 	eg.Go(grpcSvc.RunGRPCServerGracefully(ctx, lis, grpcServer))
 	// run http server
