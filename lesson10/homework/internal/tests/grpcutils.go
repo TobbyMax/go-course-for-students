@@ -23,20 +23,22 @@ var (
 	ErrMissingArgument = errors.New("rpc error: code = InvalidArgument desc = required argument is missing")
 	ErrMockInternal    = errors.New("rpc error: code = Internal desc = mock error")
 	ErrValidationMock  = errors.New("rpc error: code = InvalidArgument desc = ")
-	ErrDateMock        = errors.New("rpc error: code = InvalidArgument desc = parsing time \"20/02/2022\" as \"2006-01-02\": cannot parse \"2/2022\" as \"2006\"")
+	ErrDateMock        = errors.New("rpc error: code = InvalidArgument desc = parsing time \"abc\" as \"2006-01-02\": cannot parse \"abc\" as \"2006\"")
 )
 
 type GRPCSuite struct {
 	suite.Suite
-	Client  grpcPort.AdServiceClient
-	Conn    *grpc.ClientConn
-	Context context.Context
-	Cancel  context.CancelFunc
-	Server  *grpc.Server
-	Lis     *bufconn.Listener
+	Repo     *adrepo.RepositoryMap
+	Client   grpcPort.AdServiceClient
+	Conn     *grpc.ClientConn
+	Context  context.Context
+	Cancel   context.CancelFunc
+	Server   *grpc.Server
+	Lis      *bufconn.Listener
+	Occupied chan bool
 }
 
-func (suite *GRPCSuite) SetupTest() {
+func (suite *GRPCSuite) SetupSuite() {
 	log.Println("Setting Up Test")
 
 	suite.Lis = bufconn.Listen(1024 * 1024)
@@ -44,9 +46,11 @@ func (suite *GRPCSuite) SetupTest() {
 		grpcPort.UnaryLoggerInterceptor,
 		grpcPort.UnaryRecoveryInterceptor(),
 	))
-
-	svc := grpcPort.NewService(app.NewApp(adrepo.New()))
+	suite.Repo = adrepo.NewRepositoryMap()
+	svc := grpcPort.NewService(app.NewApp(suite.Repo))
 	grpcPort.RegisterAdServiceServer(suite.Server, svc)
+
+	suite.Context, suite.Cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	go func() {
 		suite.NoError(suite.Server.Serve(suite.Lis), "srv.Serve")
 	}()
@@ -54,9 +58,6 @@ func (suite *GRPCSuite) SetupTest() {
 	dialer := func(context.Context, string) (net.Conn, error) {
 		return suite.Lis.Dial()
 	}
-
-	suite.Context, suite.Cancel = context.WithTimeout(context.Background(), 30*time.Second)
-
 	conn, err := grpc.DialContext(suite.Context, "", grpc.WithContextDialer(dialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	suite.NoError(err, "grpc.DialContext")
@@ -65,7 +66,11 @@ func (suite *GRPCSuite) SetupTest() {
 	suite.Client = grpcPort.NewAdServiceClient(suite.Conn)
 }
 
-func (suite *GRPCSuite) TearDownTest() {
+func (suite *GRPCSuite) SetupTest() {
+	*suite.Repo = *adrepo.NewRepositoryMap()
+}
+
+func (suite *GRPCSuite) TearDownSuite() {
 	log.Println("Tearing Down Test")
 
 	err := suite.Conn.Close()

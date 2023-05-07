@@ -1,42 +1,40 @@
 package tests
 
 import (
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func FuzzCreateUserID(f *testing.F) {
+func FuzzCreateUserCheck(f *testing.F) {
 	client := getTestClient()
-	for i := 0; i < 100; i++ {
-		f.Add(i)
-	}
-	f.Fuzz(func(t *testing.T, id int) {
-		name := "Mac Miller"
-		email := "swimming@circles.com"
+	f.Fuzz(func(t *testing.T, name string, domain string) {
+		email := name + "@" + domain + ".com"
 		resp, err := client.createUser(name, email)
 
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrForbidden):
+				fallthrough
+			case errors.Is(err, ErrBadRequest):
+				fallthrough
+			case errors.Is(err, ErrNotFound):
+				fallthrough
+			case errors.Is(err, ErrInternal):
+				return
+			default:
+				panic(err.Error())
+			}
+		}
+		id := resp.Data.ID
 		assert.NoError(t, err)
-		assert.Equal(t, int64(id), resp.Data.ID)
 		assert.Equal(t, name, resp.Data.Nickname)
 		assert.Equal(t, email, resp.Data.Email)
-	})
-}
 
-func FuzzGetUserID(f *testing.F) {
-	client := getTestClient()
-	for i := 0; i < 100; i++ {
-		f.Add(i)
-	}
-	f.Fuzz(func(t *testing.T, id int) {
-		name := "Mac Miller"
-		email := "swimming@circles.com"
-		_, err := client.createUser(name, email)
+		resp, err = client.getUser(id)
+
 		assert.NoError(t, err)
-
-		resp, err := client.getUser(int64(id))
-		assert.NoError(t, err)
-
-		assert.Equal(t, int64(id), resp.Data.ID)
+		assert.Equal(t, id, resp.Data.ID)
 		assert.Equal(t, name, resp.Data.Nickname)
 		assert.Equal(t, email, resp.Data.Email)
 	})

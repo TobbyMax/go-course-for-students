@@ -1007,7 +1007,7 @@ func (suite *GRPCMockSuite) TestHandler_Filter() {
 		{
 			name: "bad request: wrong date format",
 			args: args{
-				date: "20/02/2022",
+				date: "abc",
 			},
 			wantErr:       true,
 			expectedError: ErrDateMock,
